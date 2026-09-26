@@ -1,9 +1,9 @@
 [project]
-name = "calimateo-workplace"
+name = "calimateostefano-workplace"
 version = "0.1.0"
 description = "Espacio de trabajo para las consignas de taller del segundo cuatrimestre"
 authors = [
-    {name = "cali y mateo"}
+    {name = "cali, mateo y stefano"}
 ]
 requires-python = ">=3.13"
 dependencies = [
