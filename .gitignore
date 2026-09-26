@@ -1,0 +1,6 @@
+# folders
+
+/_pycache__/
+
+# type file
+*.pyc
