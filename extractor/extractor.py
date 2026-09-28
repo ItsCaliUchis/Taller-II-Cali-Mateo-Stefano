@@ -1,8 +1,11 @@
+import argparse
+
 import requests
 import pandas as pd
 import config
 import sys
 import time
+from pathlib import Path
 
 URL = "https://amazon-reviews-api-g5ae.onrender.com/reviews"
 
@@ -26,7 +29,19 @@ def mostrar_progreso(actual, total, inicio):
     sys.stdout.flush()
 
 
-def obtener_resenias(tamanio):
+def obtener_resenias(tamanio, sobreescribir=False):
+
+    if Path(config.dataset_raw).exists():
+        if not sobreescribir:
+            respuesta = input(
+                f'El dataset ya existe en "{config.dataset_raw}". '
+                "¿Querés sobreescribirlo? [s/N]: "
+            )
+
+            if respuesta.lower() != "s":
+                print("\nDescarga cancelada. El Programa ha terminado")
+                return
+            
     lista_resenias = []
     offset = 0
     inicio = time.time()
@@ -70,4 +85,32 @@ def obtener_resenias(tamanio):
     print(dataset.describe())
 
 
-obtener_resenias(tamanio=1000)
+def main():
+    parser = argparse.ArgumentParser(
+        description="Descarga las reseñas de Amazon y genera el dataset raw."
+    )
+
+    parser.add_argument(
+        "--size",
+        type=int,
+        default=1000,
+        help="Cantidad de reseñas solicitadas por petición (default: 1000)."
+    )
+
+    parser.add_argument(
+        "--overwrite",
+        "--no-confirm",
+        action="store_true",
+        help="Sobreescribe el dataset existente sin pedir confirmación."
+    )
+
+    args = parser.parse_args()
+
+    obtener_resenias(
+        tamanio=args.size,
+        sobreescribir=args.overwrite
+    )
+
+
+if __name__ == "__main__":
+    main()
