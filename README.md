@@ -6,6 +6,7 @@ Espacio de trabajo para las consignas de **Taller II — segundo cuatrimestre**.
 
 ```text
 Taller-II-Cali-Mateo-Stefano/
+
 ├── config.py
 ├── data/
 │   ├── dataset_raw.csv
@@ -35,6 +36,7 @@ Clonar el repositorio y ubicarse en la carpeta del proyecto:
 
 ```bash
 git clone <URL_DEL_REPOSITORIO>
+
 cd Taller-II-Cali-Mateo-Stefano
 ```
 
@@ -54,6 +56,8 @@ Actualmente se manejan:
 
 * `dataset_raw`: dataset obtenido directamente desde la API.
 * `dataset_clean`: dataset resultante del proceso de limpieza.
+
+La carpeta `data/` se crea automáticamente al importar `config.py` si todavía no existe.
 
 Esto permite modificar la ubicación de los archivos sin tener que cambiar las rutas directamente en cada script.
 
@@ -76,12 +80,53 @@ Actualmente el extractor:
 5. Muestra velocidad de extracción y tiempo estimado restante.
 6. Construye un `DataFrame` de Pandas.
 7. Guarda el resultado como CSV sin almacenar el índice de Pandas.
+8. Verifica si ya existe un dataset antes de iniciar la extracción.
+9. Solicita confirmación antes de sobrescribir un dataset existente, salvo que se indique lo contrario mediante un argumento de CLI.
 
-Para ejecutar el extractor:
+### Opciones de CLI
+
+El extractor acepta los siguientes argumentos:
 
 ```bash
-poetry run python -m extractor.extractor
+--size SIZE
 ```
+
+Define la cantidad de reseñas solicitadas por petición.
+
+Por defecto:
+
+```text
+1000
+```
+
+Ejemplo:
+
+```bash
+poetry run python -m extractor.extractor --size 500
+```
+
+También permite evitar la confirmación al sobrescribir el dataset:
+
+```bash
+--overwrite
+--no-confirm
+```
+
+Ambas opciones tienen el mismo efecto.
+
+Ejemplo:
+
+```bash
+poetry run python -m extractor.extractor --overwrite
+```
+
+Para consultar todas las opciones disponibles:
+
+```bash
+poetry run python -m extractor.extractor --help
+```
+
+Si `dataset_raw.csv` ya existe y no se utiliza `--overwrite` ni `--no-confirm`, el extractor solicita confirmación antes de reemplazarlo.
 
 El dataset obtenido se guarda en la ubicación definida por:
 
@@ -124,15 +169,19 @@ Actualmente se realizan comprobaciones sobre:
 
 El módulo `clean_up/cleanup.py` procesa el dataset obtenido de la API.
 
+Antes de comenzar, verifica que el dataset raw exista en la ruta definida por `config.dataset_raw`. Si el archivo no existe, el proceso termina mostrando la ruta esperada.
+
 Actualmente:
 
 1. Elimina la columna `label_text`.
 2. Limpia el texto de las reseñas:
+
    * elimina espacios al principio y al final;
    * convierte el texto a minúsculas.
 3. Renombra conceptualmente el contenido de `text` como `reviews`.
 4. Elimina la columna original `text`.
 5. Conserva las columnas relevantes:
+
    * `id`
    * `reviews`
    * `label`
@@ -197,6 +246,22 @@ poetry run python --version
 poetry run python -m extractor.extractor
 ```
 
+### Ejecutar extracción con opciones
+
+```bash
+poetry run python -m extractor.extractor --size 500
+```
+
+```bash
+poetry run python -m extractor.extractor --overwrite
+```
+
+### Consultar ayuda del extractor
+
+```bash
+poetry run python -m extractor.extractor --help
+```
+
 ### Ejecutar análisis exploratorio
 
 ```bash
@@ -220,4 +285,8 @@ poetry run python -m clean_up.cleanup
 * [x] Limpieza básica de las reseñas.
 * [x] Generación del dataset limpio.
 * [x] Separación de configuración y rutas mediante `config.py`.
+* [x] Creación automática de la carpeta `data/`.
+* [x] Verificación de existencia del dataset raw antes de la limpieza.
+* [x] Confirmación antes de sobrescribir el dataset durante la extracción.
+* [x] Argumentos de línea de comandos para el extractor.
 * [ ] Próximas etapas de procesamiento/análisis.
