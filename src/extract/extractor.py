@@ -8,10 +8,11 @@ import time
 from pathlib import Path
 
 URL = "https://amazon-reviews-api-g5ae.onrender.com/reviews"
+PAGE_SIZE = 1000
 
 
 def mostrar_progreso(actual, total, inicio):
-    porcentaje = actual / total
+    porcentaje = min(actual / total, 1) if total else 1
     ancho = 40
     completado = int(ancho * porcentaje)
 
@@ -29,7 +30,10 @@ def mostrar_progreso(actual, total, inicio):
     sys.stdout.flush()
 
 
-def obtener_resenias(tamanio, sobreescribir=False):
+def obtener_resenias(tamanio_miles=None, sobreescribir=False):
+
+    if tamanio_miles is not None and tamanio_miles <= 0:
+        raise ValueError("--size debe ser un entero positivo")
 
     if Path(config.dataset_raw).exists():
         if not sobreescribir:
@@ -46,11 +50,12 @@ def obtener_resenias(tamanio, sobreescribir=False):
     offset = 0
     inicio = time.time()
     total = None
+    objetivo = None
 
-    while True:
-        parametros = {"limit": tamanio, "offset": offset}
+    while objetivo is None or len(lista_resenias) < objetivo:
+        parametros = {"limit": PAGE_SIZE, "offset": offset}
 
-        print(f"\nSolicitando reseñas {offset:,} → {offset + tamanio:,}...")
+        print(f"\nSolicitando reseñas {offset:,} → {offset + PAGE_SIZE:,}...")
 
         response = requests.get(URL, params=parametros)
 
@@ -59,14 +64,18 @@ def obtener_resenias(tamanio, sobreescribir=False):
 
             resenias = respuesta.get("data", [])
             total = respuesta.get("total_matching", 0)
-            devueltas = respuesta.get("returned", 0)
+            objetivo = total if tamanio_miles is None else min(
+                tamanio_miles * PAGE_SIZE,
+                total,
+            )
 
-            lista_resenias.extend(resenias)
-            offset += devueltas
+            restantes = objetivo - len(lista_resenias)
+            lista_resenias.extend(resenias[:restantes])
+            offset += len(resenias)
 
-            mostrar_progreso(offset, total, inicio)
+            mostrar_progreso(len(lista_resenias), objetivo, inicio)
 
-            if offset >= total:
+            if not resenias or len(lista_resenias) >= objetivo:
                 break
 
         else:
@@ -93,8 +102,12 @@ def main():
     parser.add_argument(
         "--size",
         type=int,
-        default=1000,
-        help="Cantidad de reseñas solicitadas por petición (default: 1000)."
+        default=None,
+        help=(
+            "Cantidad de miles de reseñas a descargar; por ejemplo, "
+            "--size 5 descarga hasta 5000. Cada petición solicita 1000. "
+            "Si se omite, descarga todas las disponibles."
+        ),
     )
 
     parser.add_argument(
@@ -106,10 +119,10 @@ def main():
 
     args = parser.parse_args()
 
-    obtener_resenias(
-        tamanio=args.size,
-        sobreescribir=args.overwrite
-    )
+    if args.size is not None and args.size <= 0:
+        parser.error("--size debe ser un entero positivo")
+
+    obtener_resenias(tamanio_miles=args.size, sobreescribir=args.overwrite)
 
 
 if __name__ == "__main__":

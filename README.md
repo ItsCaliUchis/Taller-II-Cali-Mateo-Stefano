@@ -105,18 +105,23 @@ El extractor acepta los siguientes argumentos:
 --size SIZE
 ```
 
-Define la cantidad de reseñas solicitadas por petición.
+Define la cantidad de miles de reseñas que se quieren descargar. Cada llamada
+a la API pide siempre un bloque de 1000 reseñas; `--size` limita cuántos bloques
+se recopilan.
 
-Por defecto:
+Por ejemplo:
 
 ```text
-1000
+--size 5  → hasta 5000 reseñas (5 bloques de 1000)
 ```
+
+Si se omite `--size`, se descargan todas las reseñas que informe la API.
+El último bloque puede contener menos de 1000 si ese es el total disponible.
 
 Ejemplo:
 
 ```bash
-poetry run extractor --size 500
+poetry run extractor --size 5
 ```
 
 También permite evitar la confirmación al sobrescribir el dataset:
@@ -263,7 +268,7 @@ poetry run extractor
 ### Ejecutar extracción con opciones
 
 ```bash
-poetry run extractor --size 500
+poetry run extractor --size 5
 ```
 
 ```bash
