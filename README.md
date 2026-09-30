@@ -7,17 +7,18 @@ Espacio de trabajo para las consignas de **Taller II — segundo cuatrimestre**.
 ```text
 Taller-II-Cali-Mateo-Stefano/
 
-├── config.py
+├── src/
+│   ├── config.py
+│   ├── extract/
+│   │   ├── __init__.py
+│   │   └── extractor.py
+│   └── clean/
+│       ├── __init__.py
+│       ├── cleanup.py
+│       └── exploratorio.py
 ├── data/
 │   ├── dataset_raw.csv
 │   └── dataset_clean.csv
-├── extractor/
-│   ├── __init__.py
-│   └── extractor.py
-├── clean_up/
-│   ├── __init__.py
-│   ├── cleanup.py
-│   └── exploratorio.py
 ├── pyproject.toml
 ├── poetry.lock
 └── README.md
@@ -50,7 +51,8 @@ El proyecto utiliza Python 3.13.
 
 ## Configuración
 
-Las rutas utilizadas por los scripts se encuentran centralizadas en `config.py`.
+Las rutas utilizadas por los comandos se encuentran centralizadas en
+`src/config.py`.
 
 Actualmente se manejan:
 
@@ -61,9 +63,23 @@ La carpeta `data/` se crea automáticamente al importar `config.py` si todavía 
 
 Esto permite modificar la ubicación de los archivos sin tener que cambiar las rutas directamente en cada script.
 
+## Comandos del proyecto
+
+El paquete se instala en modo editable en el entorno de Poetry. Después de
+`poetry install`, se pueden ejecutar estas tareas desde la raíz del proyecto:
+
+```bash
+poetry run extractor
+poetry run explore
+poetry run clean
+```
+
+Los imports del paquete no dependen del directorio actual. Los archivos de
+datos se guardan en la carpeta `data/` del repositorio.
+
 ## Extracción de datos
 
-El módulo `extractor/extractor.py` obtiene las reseñas desde la API:
+El comando `extractor` obtiene las reseñas desde la API:
 
 ```text
 https://amazon-reviews-api-g5ae.onrender.com/reviews
@@ -83,8 +99,6 @@ Actualmente el extractor:
 8. Verifica si ya existe un dataset antes de iniciar la extracción.
 9. Solicita confirmación antes de sobrescribir un dataset existente, salvo que se indique lo contrario mediante un argumento de CLI.
 
-### Opciones de CLI
-
 El extractor acepta los siguientes argumentos:
 
 ```bash
@@ -102,7 +116,7 @@ Por defecto:
 Ejemplo:
 
 ```bash
-poetry run python -m extractor.extractor --size 500
+poetry run extractor --size 500
 ```
 
 También permite evitar la confirmación al sobrescribir el dataset:
@@ -117,13 +131,13 @@ Ambas opciones tienen el mismo efecto.
 Ejemplo:
 
 ```bash
-poetry run python -m extractor.extractor --overwrite
+poetry run extractor --overwrite
 ```
 
 Para consultar todas las opciones disponibles:
 
 ```bash
-poetry run python -m extractor.extractor --help
+poetry run extractor --help
 ```
 
 Si `dataset_raw.csv` ya existe y no se utiliza `--overwrite` ni `--no-confirm`, el extractor solicita confirmación antes de reemplazarlo.
@@ -150,12 +164,12 @@ El proceso de limpieza mantiene compatibilidad con datasets antiguos que todaví
 
 ## Análisis exploratorio
 
-El módulo `clean_up/exploratorio.py` permite realizar una inspección inicial del dataset.
+El comando `explore` permite realizar una inspección inicial del dataset.
 
 Para ejecutarlo:
 
 ```bash
-poetry run python -m clean_up.exploratorio
+poetry run explore
 ```
 
 Actualmente se realizan comprobaciones sobre:
@@ -167,7 +181,7 @@ Actualmente se realizan comprobaciones sobre:
 
 ## Limpieza del dataset
 
-El módulo `clean_up/cleanup.py` procesa el dataset obtenido de la API.
+El comando `clean` procesa el dataset obtenido de la API.
 
 Antes de comenzar, verifica que el dataset raw exista en la ruta definida por `config.dataset_raw`. Si el archivo no existe, el proceso termina mostrando la ruta esperada.
 
@@ -190,7 +204,7 @@ Actualmente:
 Para ejecutar la limpieza:
 
 ```bash
-poetry run python -m clean_up.cleanup
+poetry run clean
 ```
 
 El resultado se guarda en:
@@ -207,18 +221,18 @@ El procesamiento de los datos se realiza en dos etapas principales:
 API
  │
  ▼
-extractor/extractor.py
+ extractor
  │
  ▼
 dataset_raw.csv
  │
  ▼
-clean_up/exploratorio.py
+ explore
  │
  ├── análisis inicial
  │
  ▼
-clean_up/cleanup.py
+ clean
  │
  ▼
 dataset_clean.csv
@@ -243,35 +257,35 @@ poetry run python --version
 ### Ejecutar extracción
 
 ```bash
-poetry run python -m extractor.extractor
+poetry run extractor
 ```
 
 ### Ejecutar extracción con opciones
 
 ```bash
-poetry run python -m extractor.extractor --size 500
+poetry run extractor --size 500
 ```
 
 ```bash
-poetry run python -m extractor.extractor --overwrite
+poetry run extractor --overwrite
 ```
 
 ### Consultar ayuda del extractor
 
 ```bash
-poetry run python -m extractor.extractor --help
+poetry run extractor --help
 ```
 
 ### Ejecutar análisis exploratorio
 
 ```bash
-poetry run python -m clean_up.exploratorio
+poetry run explore
 ```
 
 ### Ejecutar limpieza
 
 ```bash
-poetry run python -m clean_up.cleanup
+poetry run clean
 ```
 
 ## Estado actual
