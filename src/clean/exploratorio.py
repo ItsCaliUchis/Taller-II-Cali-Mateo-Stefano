@@ -1,3 +1,4 @@
+import argparse
 from pathlib import Path
 import pandas as pd
 import config
@@ -27,10 +28,15 @@ def exploratorio(df):
         print("Todas las reviews son en ingles")
     verificar_labels(df)
 
-if Path(config.dataset_raw).exists():
-    print(f'\nSe esta cargando el dataset\n')
-    df = pd.read_csv(config.dataset_raw)
-    print(f'\nSe ha cargado el dataset con {len(df)} registros, se procede a explorar el dataset\n')
-    exploratorio(df)
-else:
-    print(f'No existe el dataset en la ruta "{config.dataset_raw}", ejecute primero el script "extractor/extractor.py" para descargar el dataset y luego ejecute este script para explorar el dataset')
+def main():
+    argparse.ArgumentParser(
+        description='Realiza un análisis exploratorio del dataset raw.'
+    ).parse_args()
+
+    if Path(config.dataset_raw).exists():
+        print('\nSe esta cargando el dataset\n')
+        df = pd.read_csv(config.dataset_raw)
+        print(f'\nSe ha cargado el dataset con {len(df)} registros, se procede a explorar el dataset\n')
+        exploratorio(df)
+    else:
+        print(f'No existe el dataset en la ruta "{config.dataset_raw}", ejecute primero el comando "extractor" para descargar el dataset y luego ejecute este comando para explorar el dataset')

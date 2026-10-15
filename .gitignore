@@ -1,6 +1,9 @@
 # folders
 
-/_pycache__/
+__pycache__/
+
+# Generated datasets are local ETL artifacts.
+/data/
 
 # type file
 *.pyc
