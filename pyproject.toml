@@ -22,16 +22,23 @@ extractor = "extract.extractor:main"
 clean = "clean.cleanup:main"
 explore = "clean.exploratorio:main"
 bow = "preprocessing.bow_embedding:main"
+list-tools = "list_tools:main"
 
 [tool.poetry]
 packages = [
-    { include = "extract", from = "src" },
-    { include = "clean", from = "src" },
-    { include = "config.py", from = "src" },
-    { include = "preprocessing", from = "src"}
+    {include = "clean", from = "src"},
+    {include = "config.py", from = "src"},
+    {include = "extract", from = "src"},
+    {include = "list_tools.py", from = "src"},
+    {include = "preprocessing", from = "src"},
 ]
 
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[dependency-groups]
+dev = [
+    "tomlkit (>=0.15.2,<0.16.0)"
+]

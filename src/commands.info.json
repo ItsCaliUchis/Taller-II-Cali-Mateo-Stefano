@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "commands": {
+    "extractor": {
+      "entrypoint": "extract.extractor:main",
+      "description": "Extrae datos de las fuentes configuradas.",
+      "status": "active",
+      "include": "extract"
+    },
+    "clean": {
+      "entrypoint": "clean.cleanup:main",
+      "description": "Limpia y prepara los datos para las etapas posteriores.",
+      "status": "active",
+      "include": "clean"
+    },
+    "explore": {
+      "entrypoint": "clean.exploratorio:main",
+      "description": "Realiza el análisis exploratorio de los datos.",
+      "status": "active",
+      "include": "clean"
+    },
+    "bow": {
+      "entrypoint": "preprocessing.bow_embedding:main",
+      "description": "Genera representaciones Bag of Words del texto.",
+      "status": "active",
+      "include": "preprocessing"
+    },
+    "list-tools": {
+      "entrypoint": "list_tools:main",
+      "description": "Muestra y maneja los comandos disponibles en el proyecto.",
+      "status": "active",
+      "include": "list_tools.py"
+    },
+    "test": {
+      "entrypoint": "testeee:test",
+      "description": "testeo2",
+      "status": "retired",
+      "include": "extract"
+    }
+  }
+}

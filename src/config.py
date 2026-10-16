@@ -8,6 +8,11 @@ DATA = PROJECT_ROOT / "data"
 
 DATA.mkdir(exist_ok=True)
 
+# Rutas utilizadas para la herramienta de registro de comandos.
+JSON_COMMANDS = PROJECT_ROOT / "src" / "commands.info.json"
+TOML_PATH = PROJECT_ROOT / "pyproject.toml"
+
+# Rutas de los archivos de datos.
 dataset_raw = DATA / "dataset_raw.csv"
 dataset_clean = DATA / "dataset_clean.csv"
 bow_vect = DATA / "bow_vect.csv"
