@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 
 # Mantener los datos junto al repositorio, sin depender del directorio
 # de trabajo actual. El proyecto se instala en modo editable.
@@ -8,3 +9,7 @@ DATA.mkdir(exist_ok=True)
 
 dataset_raw = DATA / "dataset_raw.csv"
 dataset_clean = DATA / "dataset_clean.csv"
+bow_vect = DATA / "bow_vect.csv"
+
+with open(DATA / "negaciones.json","r", encoding="utf-8") as file:
+    negaciones = json.load(file)

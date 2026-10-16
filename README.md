@@ -13,12 +13,16 @@ Taller-II-Cali-Mateo-Stefano/
 │   │   ├── __init__.py
 │   │   └── extractor.py
 │   └── clean/
-│       ├── __init__.py
-│       ├── cleanup.py
-│       └── exploratorio.py
+│   │    ├── __init__.py
+│   │    ├── cleanup.py
+│   │    └── exploratorio.py
+│   └── preprocessing/
+│      ├── __init__.py
+│      └── bow_embedding.py
 ├── data/
 │   ├── dataset_raw.csv
-│   └── dataset_clean.csv
+│   ├── dataset_clean.csv
+│   └── bow_vect.csv
 ├── pyproject.toml
 ├── poetry.lock
 └── README.md
@@ -58,6 +62,7 @@ Actualmente se manejan:
 
 * `dataset_raw`: dataset obtenido directamente desde la API.
 * `dataset_clean`: dataset resultante del proceso de limpieza.
+* `bow_vect`: dataset vectorizado con BoW.
 
 La carpeta `data/` se crea automáticamente al importar `config.py` si todavía no existe.
 
@@ -218,6 +223,21 @@ El resultado se guarda en:
 config.dataset_clean
 ```
 
+## Distintos métodos de vectorización del dataset
+
+El dataset se vectoriza según los métodos a continuación: BoW, TF-IDF, N-grams, ELMo, FastText y Bert.
+
+En cada comando según el método de vectorización, se verifica que exista la ruta correspondiente a `config.dataset_clean`. Si el archivo no existe, se sugiere volver a la parte de limpieza o en efecto, verificar que se haya completado la extracción correctamente.
+
+Actualmente:
+
+1. BoW:
+1.1 Se creó un archivo `negaciones.json` para excluirlo de las stopwords provistas por nltk.corpus a modo de reducir el vocabulario.
+1.2 Las reviews en df["reviews"] atravesan cierto proceso de normalización.
+1.3 Se invoca a la función CountVectorizar para aprender todo el vocabulario previamente actualizado y crear los embeddings.
+1.4 Se crea la matriz dispersa y se la convierte a un array.
+1.5 Por último, se guarda el dataset vectorizado como csv.
+
 ## Flujo de trabajo actual
 
 El procesamiento de los datos se realiza en dos etapas principales:
@@ -241,6 +261,13 @@ dataset_raw.csv
  │
  ▼
 dataset_clean.csv
+ │
+ ▼
+ vectorización
+  │
+  ├── bow -> bow_vect.csv
+  │
+
 ```
 
 El dataset **raw** conserva los datos obtenidos de la API, mientras que el dataset **clean** contiene los datos preparados para las etapas posteriores del proyecto.
@@ -293,6 +320,15 @@ poetry run explore
 poetry run clean
 ```
 
+### Vectorización
+
+i. BoW 
+
+```bash
+poetry run bow
+```
+
+
 ## Estado actual
 
 * [x] Configuración del entorno con Poetry.
@@ -308,4 +344,6 @@ poetry run clean
 * [x] Verificación de existencia del dataset raw antes de la limpieza.
 * [x] Confirmación antes de sobrescribir el dataset durante la extracción.
 * [x] Argumentos de línea de comandos para el extractor.
+* [x] Creación de la carpeta `preprocessing/` dentro de `src/` para trabajar con los distintos métodos de vectorizacion del dataset ya limpio.
+* [x] Vectorización del dataset con BoW.
 * [ ] Próximas etapas de procesamiento/análisis.
