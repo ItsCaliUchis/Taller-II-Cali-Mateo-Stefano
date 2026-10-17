@@ -25,7 +25,7 @@
       "status": "active",
       "include": "preprocessing"
     },
-    "list-tools": {
+    "list": {
       "entrypoint": "list_tools:main",
       "description": "Muestra y maneja los comandos disponibles en el proyecto.",
       "status": "active",
@@ -36,6 +36,18 @@
       "description": "testeo2",
       "status": "retired",
       "include": "extract"
+    },
+    "idfBigram": {
+      "entrypoint": "preprocessing.idf_bigram:main",
+      "description": "Modulo de procesamiento de embeddings de tipo tf/idf",
+      "status": "active",
+      "include": "preprocessing"
+    },
+    "fasttext": {
+      "entrypoint": "preprocessing.test:main",
+      "description": "modulo de prueba xd",
+      "status": "active",
+      "include": "preprocessing"
     }
   }
 }

@@ -22,7 +22,9 @@ extractor = "extract.extractor:main"
 clean = "clean.cleanup:main"
 explore = "clean.exploratorio:main"
 bow = "preprocessing.bow_embedding:main"
-list-tools = "list_tools:main"
+list = "list_tools:main"
+idfBigram = "preprocessing.idf_bigram:main"
+fasttext = "preprocessing.test:main"
 
 [tool.poetry]
 packages = [
