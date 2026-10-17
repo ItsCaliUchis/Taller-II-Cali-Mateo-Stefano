@@ -21,6 +21,9 @@ Taller-II-Cali-Mateo-Stefano/
 │       ├── __init__.py
 │       ├── bow_embedding.py
 │       ├── idf_ngram.py
+│       ├── bert.py
+│       ├── elmo.py
+│       ├── fasttext.py
 │       └── utils.py
 ├── data/
 │   ├── negaciones.json
@@ -122,15 +125,29 @@ Cuenta con un **Watchdog de ejecución** que observa el rendimiento (tiempo tran
 
 #### Métodos de Vectorización
 
-* **Bag of Words (BoW):** Conteo de frecuencias mediante `CountVectorizer`, exportado a CSV.
-* **TF-IDF de Monogramas y Bigramas:** Ponderación de términos según su frecuencia en cada documento y su distribución global.
-* Configuración: Monogramas (`ngram_range=(1, 1)`) y Bigramas (`ngram_range=(2, 2)`).
-* **Límite de procesamiento:** Los comandos admiten el argumento opcional `--limit` (entero positivo) para realizar pruebas con una cantidad acotada de reseñas. Cuando se utiliza, el límite se incorpora automáticamente a los nombres de salida para distinguir los resultados parciales de los completos. (Consultar disponibilidad de dicho argumento opcional)
+El proyecto implementa distintos métodos de representación vectorial de texto para transformar las reseñas en datos numéricos que puedan utilizarse en tareas de procesamiento del lenguaje natural (NLP).
 
+- **Bag of Words (BoW):** representa cada documento mediante la frecuencia de aparición de las palabras de su vocabulario, utilizando `CountVectorizer`.
+- **N-gramas con TF-IDF:** genera representaciones basadas en la frecuencia de los términos y su relevancia relativa en el corpus. Permite trabajar con monogramas y bigramas mediante `TfidfVectorizer`, configurando `ngram_range=(1, 1)` y `ngram_range=(2, 2)`, respectivamente.
+- **BERT:** utiliza `bert-base-uncased` para obtener representaciones contextuales del texto mediante un modelo Transformer preentrenado.
+- **ELMo:** genera representaciones contextuales de palabras mediante un modelo de lenguaje basado en redes neuronales recurrentes.
+- **FastText:** obtiene representaciones vectoriales de palabras considerando información de subpalabras, lo que permite aprovechar características morfológicas y representar palabras fuera del vocabulario aprendido, según la configuración del modelo.
 
-#### Formato de Salida y Uso de Matrices Dispersas
+#### Límite de procesamiento
 
-Las matrices de texto suelen contener muchos ceros, ya que cada reseña utiliza solo una pequeña parte del vocabulario global. Exportar una matriz completa a un CSV ancho requeriría escribir cientos de miles de millones de celdas. Para solucionarlo, **las matrices TF-IDF se guardan en formato `.npz` utilizando matrices dispersas de SciPy**, mientras que el vocabulario se exporta por separado en un archivo CSV.
+Los comandos que lo implementan admiten el argumento opcional `--limit`, que permite restringir la cantidad de reseñas procesadas durante las pruebas. El valor debe ser un entero positivo.
+
+Cuando corresponde, el límite se incorpora automáticamente al nombre de los archivos de salida para distinguir los resultados parciales de los completos.
+
+#### Formato de Salida y Uso de Matrices
+
+El formato de exportación depende del método de vectorización:
+
+- **BoW y TF-IDF:** las representaciones se almacenan en los formatos definidos por cada implementación. Las matrices dispersas de TF-IDF se guardan en archivos `.npz` mediante SciPy, y el vocabulario asociado se exporta por separado en CSV.
+- **BERT y ELMo:** generan representaciones vectoriales densas a partir de modelos de lenguaje preentrenados.
+- **FastText:** permite obtener vectores densos para palabras y, según la implementación, representaciones agregadas de documentos.
+
+Los archivos generados y sus dimensiones dependen del método utilizado, de la configuración del modelo y de la cantidad de reseñas procesadas.
 
 Ejemplo de ejecución completa:
 
@@ -168,10 +185,10 @@ El archivo de vocabulario contiene dos columnas: `index` (posición de la column
 * [x] Paquete de preprocesamiento con manejo inteligente de negaciones.
 * [x] Gestor de herramientas CLI (CRUD para registrar, modificar, consultar y sincronizar comandos con `pyproject.toml`).
 * [x] Watchdog de tiempo y uso de RAM para las etapas de procesamiento.
-* [x] Vectorización BoW.
-* [x] TF-IDF de monogramas y bigramas.
-* [x] Argumento `--limit` para pruebas con cantidad acotada de reseñas.
-* [x] Exportación de matrices TF-IDF en formato disperso `.npz`.
-* [x] Exportación de vocabularios TF-IDF en archivos CSV separados.
-* [ ] Incorporación de otros métodos de representación (ELMo, FastText y BERT).
+* [x] Vectorización Bag of Words (BoW).
+* [x] Vectorización TF-IDF de monogramas y bigramas.
+* [x] Generación de embeddings mediante BERT, ELMo y FastText.
+* [x] Argumento opcional `--limit` para pruebas con una cantidad acotada de reseñas en los comandos compatibles.
+* [x] Exportación de matrices de representación en formato disperso `.npz` cuando corresponde.
+* [x] Exportación de vocabularios en archivos CSV independientes.
 * [ ] Próximas etapas de procesamiento y análisis.
