@@ -80,7 +80,7 @@ def extractor_reviews(df):
 
         review_split = [
             word for word in review_split
-            if word not in stop_words
+            if word not in stop_words and word.isalpha()
         ]
 
         review_normalize = " ".join(review_split)
