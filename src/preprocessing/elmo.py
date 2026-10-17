@@ -9,15 +9,42 @@ import numpy as np
 import pandas as pd
 from scipy.sparse import save_npz
 from nltk.tokenize import word_tokenize as wt
+import requests
 from .utils import extractor_reviews, ejecutar_etapa
 
 print("LA VECTORIZACION ELMO SE ESTA EJECUTANDO")
+
+pesos = "https://vectors.nlpl.eu/repository/20/194.zip"
 
 def load_elmo():
     from simple_elmo import ElmoModel
     model = ElmoModel()
 
-    model.load(str(config.elmo_load))
+    if not Path(str(config.elmo_load)).exists():
+        respuesta = input("Los pesos no se encuentran instalados. ¿Desea instalar? [s/n]: ")
+
+        if respuesta.lower() != "s":
+            print("\nPrograma de vectorizacion terminado")
+            return
+        
+        else:
+            descarga = requests.get(pesos)
+            
+            if descarga.status_code == 200:
+                with open(f"{config.elmo_load}", "wb") as archivo:
+                    archivo.write(descarga.content)
+
+                model.load(str(config.elmo_load))
+                return model
+            
+            else:
+                print("\nLa descarga no fue exitosa")
+                return
+
+    else:
+        print(f"Los pesos se encuentran instalados en {config.elmo_load}")
+        model.load(str(config.elmo_load))
+    
     return model
     
 def main():
@@ -58,10 +85,11 @@ def main():
         flush=True
     )
 
-    modelo = ejecutar_etapa(
-        "carga del modelo ELMo",
-        load_elmo
-    )
+    modelo = load_elmo()
+
+    if modelo is None:
+        print("No se pudo cargar el modelo ELMo. Se cancela la vectorización.")
+        return
 
     print("\nse procede a generar los embeddings.\n", flush=True)
 
@@ -79,8 +107,7 @@ def main():
     vect = ejecutar_etapa(
         "Generación de embeddings",
         embedding,
-        sentences,
-        flush=True
+        sentences
     )
 
     if vect is None:
