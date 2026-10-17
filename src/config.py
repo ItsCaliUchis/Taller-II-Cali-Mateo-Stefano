@@ -17,6 +17,8 @@ dataset_raw = DATA / "dataset_raw.csv"
 dataset_clean = DATA / "dataset_clean.csv"
 bow_vect = DATA / "bow_vect.csv"
 idf_bigram = DATA / "idf_bigram.csv"
+idf_monogram = DATA / "idf_monogram.csv"
+
 negaciones_path = DATA / "negaciones.json"
 
 def cargar_negaciones():

@@ -118,8 +118,14 @@ def list_tools(show_all=False):
         print(f"{name} — {info.get('description', 'No description')}")
         print(f"  Entrypoint: {info.get('entrypoint', 'Not configured')}")
         print(f"  Include: {info.get('include', 'Not configured')}")
-        print(f"  Status: {info.get('status', 'unknown')}\n")
+        print(f"  Status: {info.get('status', 'unknown')}")
 
+        if info.get("supports_help", False):
+            print(f"  Parameters: Yes — run `poetry run {name} --help`")
+        else:
+            print("  Parameters: No")
+
+        print()
 
 def prompt_value(label, current=None, *, required=False):
     suffix = f" [{current}]" if current else ""
@@ -129,6 +135,26 @@ def prompt_value(label, current=None, *, required=False):
     if required and not value:
         raise ValueError(f"{label} no puede estar vacio.")
     return value
+
+
+def prompt_bool(label, current=None):
+    suffix = " (true/false)"
+    if current is not None:
+        suffix = f" (true/false) [{str(current).lower()}]"
+
+    while True:
+        value = input(f"{label}{suffix}: ").strip().lower()
+
+        if not value and current is not None:
+            return current
+
+        if value in {"true", "t", "yes", "y", "si", "sí", "1"}:
+            return True
+
+        if value in {"false", "f", "no", "n", "0"}:
+            return False
+
+        print("Valor inválido. Ingrese true o false.")
 
 
 def validate_command(name, entrypoint, description, include, catalog, *, old_name=None):
@@ -158,7 +184,9 @@ def add_tool(include_arg=None):
             "Include path relativo a src (e.g. analysis or analysis.py)",
             required=True,
         )
+        supports_help = prompt_bool("¿Acepta --help?")
         validate_command(name, entrypoint, description, include, catalog)
+
     except ValueError as error:
         print(f"Error: {error}", file=sys.stderr)
         return 1
@@ -181,35 +209,76 @@ def add_tool(include_arg=None):
 def modify_tool(name, include_arg=None):
     catalog = load_catalog()
     info = catalog["commands"].get(name)
+
     if info is None:
-        print(f"Error: '{name}' No existe en el catalogo.", file=sys.stderr)
+        print(f"Error: '{name}' no existe en el catalogo.", file=sys.stderr)
         return 1
 
-    print(f"Modify project tool: {name}\n(Presiona enter para conservar el valor actual.)\n")
+    print(
+        f"Modify project tool: {name}\n"
+        "(Presiona enter para conservar el valor actual.)\n"
+    )
+
     try:
         new_name = prompt_value("Command name", name, required=True)
-        entrypoint = prompt_value("Entrypoint (module:function)", info.get("entrypoint"), required=True)
-        description = prompt_value("Description", info.get("description"), required=True)
-        include = include_arg or prompt_value("Include path relativo a src", info.get("include"), required=True)
-        status = prompt_value("Status (active/deprecated/retired)", info.get("status", "active"), required=True).lower()
+        entrypoint = prompt_value(
+            "Entrypoint (module:function)",
+            info.get("entrypoint"),
+            required=True,
+        )
+        description = prompt_value(
+            "Description",
+            info.get("description"),
+            required=True,
+        )
+        include = include_arg or prompt_value(
+            "Include path relativo a src",
+            info.get("include"),
+            required=True,
+        )
+        status = prompt_value(
+            "Status (active/deprecated/retired)",
+            info.get("status", "active"),
+            required=True,
+        ).lower()
+
+        supports_help = prompt_bool(
+            "¿Acepta --help?",
+            info.get("supports_help", False),
+        )
+
         if status not in VALID_STATUSES:
-            raise ValueError("Status debe ser 'active', 'deprecated' o 'retired'.")
-        validate_command(new_name, entrypoint, description, include, catalog, old_name=name)
+            raise ValueError(
+                "Status debe ser 'active', 'deprecated' o 'retired'."
+            )
+
+        validate_command(
+            new_name,
+            entrypoint,
+            description,
+            include,
+            catalog,
+            old_name=name,
+        )
+
     except ValueError as error:
         print(f"Error: {error}", file=sys.stderr)
         return 1
 
     if new_name != name:
         del catalog["commands"][name]
+
     catalog["commands"][new_name] = {
         "entrypoint": entrypoint,
         "description": description,
         "status": status,
         "include": include.replace("\\", "/").strip(),
+        "supports_help": supports_help,
     }
 
     if save_and_sync(catalog) != 0:
         return 1
+
     print(f"Tool '{new_name}' fue actualizada correctamente.")
     return 0
 
@@ -255,7 +324,6 @@ def main():
     if args.sync:
         raise SystemExit(sync_project())
     list_tools(show_all=args.all)
-
 
 if __name__ == "__main__":
     main()

@@ -14,7 +14,8 @@ dependencies = [
     "nltk (>=3.10.3,<4.0.0)",
     "scikit-learn (>=1.9.1,<2.0.0)",
     "numpy (>=2.5.4,<3.0.0)",
-    "scipy (>=1.18.1,<2.0.0)"
+    "scipy (>=1.18.1,<2.0.0)",
+    "psutil (>=7.2.2,<8.0.0)"
 ]
 
 [project.scripts]
@@ -23,7 +24,8 @@ clean = "clean.cleanup:main"
 explore = "clean.exploratorio:main"
 bow = "preprocessing.bow_embedding:main"
 list = "list_tools:main"
-idfBigram = "preprocessing.idf_bigram:main"
+idfMonogram = "preprocessing.idf_ngram:monograma"
+idfBigram = "preprocessing.idf_ngram:bigrama"
 fasttext = "preprocessing.test:main"
 
 [tool.poetry]
