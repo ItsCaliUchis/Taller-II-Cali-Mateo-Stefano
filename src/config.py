@@ -15,7 +15,8 @@ TOML_PATH = PROJECT_ROOT / "pyproject.toml"
 # Rutas de los archivos de datos.
 dataset_raw = DATA / "dataset_raw.csv"
 dataset_clean = DATA / "dataset_clean.csv"
-bow_vect = DATA / "bow_vect.csv"
+bow_vect = DATA / "bow_vect.npz"
+bow_vocab = DATA / "bow_vocab.csv"
 idf_bigram = DATA / "idf_bigram.csv"
 idf_monogram = DATA / "idf_monogram.csv"
 elmo_vect = DATA / "elmo_vect.npz" # exportación de elmo 
