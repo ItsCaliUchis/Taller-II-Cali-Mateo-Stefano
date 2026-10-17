@@ -59,10 +59,17 @@
     },
     "fasttext": {
       "entrypoint": "preprocessing.fasttext:main",
-      "description": "modulo de prueba xd",
+      "description": "Modulo de procesamiento de embeddings fasttext",
       "status": "active",
       "include": "preprocessing",
-      "supports_help": false
+      "supports_help": true
+    },
+    "elmo": {
+      "entrypoint": "preprocessing.elmo:main",
+      "description": "Modulo de procesamiento de embeddings elmo",
+      "status": "active",
+      "include": "preprocessing",
+      "supports_help": true
     }
   }
 }
