@@ -1,9 +1,11 @@
 # folders
-
 __pycache__/
 
 # Generated datasets are local ETL artifacts.
 /data/
+!/data/
+/data/*
+!/data/negaciones.json
 
 # type file
 *.pyc
