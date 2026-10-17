@@ -6,344 +6,172 @@ Espacio de trabajo para las consignas de **Taller II — segundo cuatrimestre**.
 
 ```text
 Taller-II-Cali-Mateo-Stefano/
-
 ├── src/
 │   ├── config.py
+│   ├── list_tools.py
+│   ├── commands.info.json
 │   ├── extract/
 │   │   ├── __init__.py
 │   │   └── extractor.py
-│   └── clean/
-│   │    ├── __init__.py
-│   │    ├── cleanup.py
-│   │    └── exploratorio.py
+│   ├── clean/
+│   │   ├── __init__.py
+│   │   ├── cleanup.py
+│   │   └── exploratorio.py
 │   └── preprocessing/
-│      ├── __init__.py
-│      └── bow_embedding.py
+│       ├── __init__.py
+│       ├── bow_embedding.py
+│       ├── idf_ngram.py
+│       └── utils.py
 ├── data/
-│   ├── dataset_raw.csv
-│   ├── dataset_clean.csv
-│   └── bow_vect.csv
+│   ├── negaciones.json
+│   └── Archivos generados durante el procesamiento
 ├── pyproject.toml
 ├── poetry.lock
 └── README.md
+
 ```
 
-## Requisitos
+Los archivos de salida se generan según las rutas definidas en `src/config.py`. La carpeta `data/` se crea automáticamente al importar el módulo si todavía no existe.
 
-* Python 3.13 o superior
-* Poetry
+---
 
-Las dependencias del proyecto se encuentran declaradas en `pyproject.toml` y bloqueadas mediante `poetry.lock`.
+## Requisitos e instalación
 
-## Instalación
+* **Python 3.13 o superior**
+* **Poetry**
 
-Clonar el repositorio y ubicarse en la carpeta del proyecto:
+Clonar el repositorio y ubicarse en su directorio raíz:
 
 ```bash
 git clone <URL_DEL_REPOSITORIO>
-
 cd Taller-II-Cali-Mateo-Stefano
+
 ```
 
-Instalar las dependencias mediante Poetry:
+Instalar las dependencias y el paquete en modo editable:
 
 ```bash
 poetry install
-```
-
-El proyecto utiliza Python 3.13.
-
-## Configuración
-
-Las rutas utilizadas por los comandos se encuentran centralizadas en
-`src/config.py`.
-
-Actualmente se manejan:
-
-* `dataset_raw`: dataset obtenido directamente desde la API.
-* `dataset_clean`: dataset resultante del proceso de limpieza.
-* `bow_vect`: dataset vectorizado con BoW.
-
-La carpeta `data/` se crea automáticamente al importar `config.py` si todavía no existe.
-
-Esto permite modificar la ubicación de los archivos sin tener que cambiar las rutas directamente en cada script.
-
-## Comandos del proyecto
-
-El paquete se instala en modo editable en el entorno de Poetry. Después de
-`poetry install`, se pueden ejecutar estas tareas desde la raíz del proyecto:
-
-```bash
-poetry run extractor
-poetry run explore
-poetry run clean
-```
-
-Los imports del paquete no dependen del directorio actual. Los archivos de
-datos se guardan en la carpeta `data/` del repositorio.
-
-## Extracción de datos
-
-El comando `extractor` obtiene las reseñas desde la API:
-
-```text
-https://amazon-reviews-api-g5ae.onrender.com/reviews
-```
-
-La extracción se realiza mediante solicitudes paginadas utilizando `limit` y `offset`.
-
-Actualmente el extractor:
-
-1. Solicita las reseñas a la API.
-2. Obtiene la cantidad total de registros.
-3. Descarga los registros por bloques.
-4. Muestra el progreso de la descarga.
-5. Muestra velocidad de extracción y tiempo estimado restante.
-6. Construye un `DataFrame` de Pandas.
-7. Guarda el resultado como CSV sin almacenar el índice de Pandas.
-8. Verifica si ya existe un dataset antes de iniciar la extracción.
-9. Solicita confirmación antes de sobrescribir un dataset existente, salvo que se indique lo contrario mediante un argumento de CLI.
-
-El extractor acepta los siguientes argumentos:
-
-```bash
---size SIZE
-```
-
-Define la cantidad de miles de reseñas que se quieren descargar. Cada llamada
-a la API pide siempre un bloque de 1000 reseñas; `--size` limita cuántos bloques
-se recopilan.
-
-Por ejemplo:
-
-```text
---size 5  → hasta 5000 reseñas (5 bloques de 1000)
-```
-
-Si se omite `--size`, se descargan todas las reseñas que informe la API.
-El último bloque puede contener menos de 1000 si ese es el total disponible.
-
-Ejemplo:
-
-```bash
-poetry run extractor --size 5
-```
-
-También permite evitar la confirmación al sobrescribir el dataset:
-
-```bash
---overwrite
---no-confirm
-```
-
-Ambas opciones tienen el mismo efecto.
-
-Ejemplo:
-
-```bash
-poetry run extractor --overwrite
-```
-
-Para consultar todas las opciones disponibles:
-
-```bash
-poetry run extractor --help
-```
-
-Si `dataset_raw.csv` ya existe y no se utiliza `--overwrite` ni `--no-confirm`, el extractor solicita confirmación antes de reemplazarlo.
-
-El dataset obtenido se guarda en la ubicación definida por:
-
-```python
-config.dataset_raw
-```
-
-### Nota sobre `Unnamed: 0`
-
-El extractor utiliza:
-
-```python
-dataset.to_csv(config.dataset_raw, index=False)
-```
-
-Esto evita guardar el índice interno de Pandas como una columna adicional.
-
-En versiones anteriores se utilizaba `to_csv()` sin `index=False`, lo que provocaba que al volver a leer el CSV apareciera una columna `Unnamed: 0`.
-
-El proceso de limpieza mantiene compatibilidad con datasets antiguos que todavía contengan dicha columna.
-
-## Análisis exploratorio
-
-El comando `explore` permite realizar una inspección inicial del dataset.
-
-Para ejecutarlo:
-
-```bash
-poetry run explore
-```
-
-Actualmente se realizan comprobaciones sobre:
-
-* Columnas disponibles.
-* Valores faltantes.
-* Idioma de las reseñas.
-* Correspondencia entre `label` y `label_text`.
-
-## Limpieza del dataset
-
-El comando `clean` procesa el dataset obtenido de la API.
-
-Antes de comenzar, verifica que el dataset raw exista en la ruta definida por `config.dataset_raw`. Si el archivo no existe, el proceso termina mostrando la ruta esperada.
-
-Actualmente:
-
-1. Elimina la columna `label_text`.
-2. Limpia el texto de las reseñas:
-
-   * elimina espacios al principio y al final;
-   * convierte el texto a minúsculas.
-3. Renombra conceptualmente el contenido de `text` como `reviews`.
-4. Elimina la columna original `text`.
-5. Conserva las columnas relevantes:
-
-   * `id`
-   * `reviews`
-   * `label`
-6. Guarda el dataset limpio como CSV.
-
-Para ejecutar la limpieza:
-
-```bash
-poetry run clean
-```
-
-El resultado se guarda en:
-
-```python
-config.dataset_clean
-```
-
-## Distintos métodos de vectorización del dataset
-
-El dataset se vectoriza según los métodos a continuación: BoW, TF-IDF, N-grams, ELMo, FastText y Bert.
-
-En cada comando según el método de vectorización, se verifica que exista la ruta correspondiente a `config.dataset_clean`. Si el archivo no existe, se sugiere volver a la parte de limpieza o en efecto, verificar que se haya completado la extracción correctamente.
-
-Actualmente:
-
-1. BoW:
-1.1 Se creó un archivo `negaciones.json` para excluirlo de las stopwords provistas por nltk.corpus a modo de reducir el vocabulario.
-1.2 Las reviews en df["reviews"] atravesan cierto proceso de normalización.
-1.3 Se invoca a la función CountVectorizar para aprender todo el vocabulario previamente actualizado y crear los embeddings.
-1.4 Se crea la matriz dispersa y se la convierte a un array.
-1.5 Por último, se guarda el dataset vectorizado como csv.
-
-## Flujo de trabajo actual
-
-El procesamiento de los datos se realiza en dos etapas principales:
-
-```text
-API
- │
- ▼
- extractor
- │
- ▼
-dataset_raw.csv
- │
- ▼
- explore
- │
- ├── análisis inicial
- │
- ▼
- clean
- │
- ▼
-dataset_clean.csv
- │
- ▼
- vectorización
-  │
-  ├── bow -> bow_vect.csv
-  │
 
 ```
 
-El dataset **raw** conserva los datos obtenidos de la API, mientras que el dataset **clean** contiene los datos preparados para las etapas posteriores del proyecto.
-
-## Comandos principales
-
-### Instalar dependencias
-
-```bash
-poetry install
-```
-
-### Verificar Python
+Verificar la versión de Python configurada:
 
 ```bash
 poetry run python --version
+
 ```
 
-### Ejecutar extracción
+---
 
+## Configuración y Gestión de Herramientas CLI
+
+Las rutas de los archivos se centralizan en `src/config.py` (dataset raw, dataset clean, vectores BoW y salidas TF-IDF), permitiendo cambiar ubicaciones sin alterar la lógica de los scripts.
+
+### Gestor de herramientas CLI
+
+El proyecto incorpora un gestor centralizado que actúa como un **CRUD de comandos** (permite registrar, listar, modificar y eliminar herramientas). Su propósito principal es **sincronizar automáticamente el catálogo de comandos con `pyproject.toml`**, evitando la administración manual de cada entrada.
+
+* **Listar comandos expuestos:** Puedes consultar todas las herramientas activas ejecutando:
 ```bash
-poetry run extractor
+poetry run list
+
 ```
 
-### Ejecutar extracción con opciones
 
+* **Consultar ayuda:** Cada comando declara si admite la opción de ayuda. Para ver las opciones y parámetros específicos de un comando, puedes hacer:
 ```bash
-poetry run extractor --size 5
-```
+poetry run <comando> --help
 
-```bash
-poetry run extractor --overwrite
-```
-
-### Consultar ayuda del extractor
-
-```bash
-poetry run extractor --help
-```
-
-### Ejecutar análisis exploratorio
-
-```bash
-poetry run explore
-```
-
-### Ejecutar limpieza
-
-```bash
-poetry run clean
-```
-
-### Vectorización
-
-i. BoW 
-
-```bash
-poetry run bow
 ```
 
 
-## Estado actual
+
+*(Nota: Este diseño permite mantener el README ágil, evitando detallar manualmente todos los argumentos de cada función. Para conocer los argumentos y opciones disponibles, consultar la ayuda de cada comando.).*
+
+---
+
+## Flujo de procesamiento
+
+El pipeline se organiza en tres etapas principales, que utilizan los archivos generados en las etapas anteriores como entrada para el procesamiento siguiente.
+
+```text
+API ──> [Extracción] ──> dataset_raw.csv ──> [Exploración / Limpieza] ──> dataset_clean.csv ──> [Vectorización (BoW / TF-IDF)]
+
+```
+
+### 1. Extracción de datos
+
+Obtiene las reseñas desde la API (`https://amazon-reviews-api-g5ae.onrender.com/reviews`) mediante solicitudes paginadas con `limit` y `offset` en bloques de 1000 registros:
+
+* Muestra el progreso de descarga, velocidad y tiempo estimado restante.
+* Permite limitar la descarga mediante `--size` (en miles de registros).
+* Verifica la existencia previa del dataset y solicita confirmación antes de sobrescribirlo (salvo que se indique `--overwrite` o `--no-confirm`).
+* Previene columnas duplicadas de índices (`Unnamed: 0`).
+
+### 2. Análisis exploratorio y Limpieza
+
+* **Análisis exploratorio:** Inspecciona columnas, valores faltantes, idioma y correspondencia de etiquetas (`label` y `label_text`).
+* **Limpieza:** Elimina columnas redundantes (`label_text`, `text`), normaliza textos (espacios, minúsculas), renombra campos clave (`text` a `reviews`) y conserva únicamente las columnas relevantes (`id`, `reviews`, `label`).
+
+### 3. Vectorización y Representación de Texto
+
+Las etapas de vectorización reutilizan utilidades comunes (`src/preprocessing/utils.py`), incluyendo el filtrado de *stopwords* en inglés mediante NLTK **preservando las negaciones** configuradas en el proyecto para evitar invertir el significado de las reseñas.
+
+Cuenta con un **Watchdog de ejecución** que observa el rendimiento (tiempo transcurrido y consumo de memoria RAM en la terminal mediante una animación) durante las operaciones de procesamiento.
+
+#### Métodos de Vectorización
+
+* **Bag of Words (BoW):** Conteo de frecuencias mediante `CountVectorizer`, exportado a CSV.
+* **TF-IDF de Monogramas y Bigramas:** Ponderación de términos según su frecuencia en cada documento y su distribución global.
+* Configuración: Monogramas (`ngram_range=(1, 1)`) y Bigramas (`ngram_range=(2, 2)`).
+* **Límite de procesamiento:** Los comandos admiten el argumento opcional `--limit` (entero positivo) para realizar pruebas con una cantidad acotada de reseñas. Cuando se utiliza, el límite se incorpora automáticamente a los nombres de salida para distinguir los resultados parciales de los completos. (Consultar disponibilidad de dicho argumento opcional)
+
+
+#### Formato de Salida y Uso de Matrices Dispersas
+
+Las matrices de texto suelen contener muchos ceros, ya que cada reseña utiliza solo una pequeña parte del vocabulario global. Exportar una matriz completa a un CSV ancho requeriría escribir cientos de miles de millones de celdas. Para solucionarlo, **las matrices TF-IDF se guardan en formato `.npz` utilizando matrices dispersas de SciPy**, mientras que el vocabulario se exporta por separado en un archivo CSV.
+
+Ejemplo de ejecución completa:
+
+```text
+data/
+├── idf_monogram.npz
+├── idf_monogram_vocab.csv
+├── idf_bigram.npz
+└── idf_bigram_vocab.csv
+
+```
+
+Ejemplo de ejecución limitada a 1000 reseñas:
+
+```text
+data/
+├── idf_bigram_limit_1000.npz
+└── idf_bigram_limit_1000_vocab.csv
+
+```
+
+El archivo de vocabulario contiene dos columnas: `index` (posición de la columna en la matriz) y `term` (término o bigrama asociado).
+
+---
+
+## Estado actual del proyecto
 
 * [x] Configuración del entorno con Poetry.
-* [x] Extracción de datos desde la API.
-* [x] Extracción paginada mediante `limit` y `offset`.
-* [x] Indicador de progreso durante la extracción.
-* [x] Generación del dataset raw.
-* [x] Análisis exploratorio inicial.
-* [x] Limpieza básica de las reseñas.
-* [x] Generación del dataset limpio.
-* [x] Separación de configuración y rutas mediante `config.py`.
+* [x] Centralización de rutas mediante `config.py`.
 * [x] Creación automática de la carpeta `data/`.
-* [x] Verificación de existencia del dataset raw antes de la limpieza.
-* [x] Confirmación antes de sobrescribir el dataset durante la extracción.
-* [x] Argumentos de línea de comandos para el extractor.
-* [x] Creación de la carpeta `preprocessing/` dentro de `src/` para trabajar con los distintos métodos de vectorizacion del dataset ya limpio.
-* [x] Vectorización del dataset con BoW.
-* [ ] Próximas etapas de procesamiento/análisis.
+* [x] Extracción paginada desde la API con indicador de progreso, velocidad y tiempo estimado.
+* [x] Confirmación antes de sobrescribir el dataset raw.
+* [x] Análisis exploratorio inicial.
+* [x] Limpieza y generación del dataset limpio.
+* [x] Paquete de preprocesamiento con manejo inteligente de negaciones.
+* [x] Gestor de herramientas CLI (CRUD para registrar, modificar, consultar y sincronizar comandos con `pyproject.toml`).
+* [x] Watchdog de tiempo y uso de RAM para las etapas de procesamiento.
+* [x] Vectorización BoW.
+* [x] TF-IDF de monogramas y bigramas.
+* [x] Argumento `--limit` para pruebas con cantidad acotada de reseñas.
+* [x] Exportación de matrices TF-IDF en formato disperso `.npz`.
+* [x] Exportación de vocabularios TF-IDF en archivos CSV separados.
+* [ ] Incorporación de otros métodos de representación (ELMo, FastText y BERT).
+* [ ] Próximas etapas de procesamiento y análisis.
