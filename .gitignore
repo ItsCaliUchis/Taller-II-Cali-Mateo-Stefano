@@ -6,6 +6,7 @@ __pycache__/
 !/data/
 /data/*
 !/data/negaciones.json
+!/data/model_elmo.zip
 
 # type file
 *.pyc

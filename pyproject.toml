@@ -16,7 +16,10 @@ dependencies = [
     "numpy (>=2.5.4,<3.0.0)",
     "scipy (>=1.18.1,<2.0.0)",
     "psutil (>=7.2.2,<8.0.0)",
-    "gensim (>=4.4.0,<5.0.0)"
+    "gensim (>=4.4.0,<5.0.0)",
+    "simple-elmo (>=0.9.2,<0.10.0)",
+    "tensorflow (>=2.21.0,<3.0.0)",
+    "tf-keras (==2.21.0)"
 ]
 
 [project.scripts]
@@ -28,6 +31,7 @@ list = "list_tools:main"
 idfMonogram = "preprocessing.idf_ngram:monograma"
 idfBigram = "preprocessing.idf_ngram:bigrama"
 fasttext = "preprocessing.fasttext:main"
+elmo = "preprocessing.elmo:main"
 
 [tool.poetry]
 packages = [

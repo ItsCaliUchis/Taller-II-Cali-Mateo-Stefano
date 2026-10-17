@@ -1,5 +1,6 @@
 import config
 from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize as wt
 from itertools import cycle
 from threading import Event, Thread
 from time import perf_counter
@@ -71,7 +72,7 @@ def extractor_reviews(df):
     vec_reviews = []
 
     for review in df["reviews"]:
-        review_split = review.lower().split()
+        review_split = wt(review.lower())
 
         review_split = [
             word for word in review_split

@@ -18,6 +18,8 @@ dataset_clean = DATA / "dataset_clean.csv"
 bow_vect = DATA / "bow_vect.csv"
 idf_bigram = DATA / "idf_bigram.csv"
 idf_monogram = DATA / "idf_monogram.csv"
+elmo_vect = DATA / "elmo_vect.npz" # exportación de elmo 
+elmo_load = DATA / "model_elmo.zip" # carga de elmo
 
 negaciones_path = DATA / "negaciones.json"
 
