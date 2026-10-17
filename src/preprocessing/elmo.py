@@ -89,7 +89,7 @@ def main():
         "Exportación del vocabulario CSV",
         guardar_vocabulario,
         vocabulario,
-        config.vocabulario_Path
+        config.vocabulario_elmo
     )
     
     print(

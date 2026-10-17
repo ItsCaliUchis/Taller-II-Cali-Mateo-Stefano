@@ -20,7 +20,9 @@ idf_bigram = DATA / "idf_bigram.csv"
 idf_monogram = DATA / "idf_monogram.csv"
 elmo_vect = DATA / "elmo_vect.npz" # exportación de elmo 
 elmo_load = DATA / "model_elmo.zip" # carga de elmo
-vocabulario_Path = DATA / "elmo_vocab.csv"
+vocabulario_elmo = DATA / "elmo_vocab.csv"
+vocabulario_bert = DATA / "bert_vocab.csv"
+bert_vect = DATA / "bert_vect.npz"
 
 # Configuración de FastText
 MODELO_FASTTEXT = "fasttext-wiki-news-subwords-300"

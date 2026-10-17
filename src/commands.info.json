@@ -69,7 +69,17 @@
       "description": "Modulo de procesamiento de embeddings elmo",
       "status": "active",
       "include": "preprocessing",
+<<<<<<< Updated upstream
       "supports_help": true
+=======
+      "supports_help": false
+    },
+    "bert": {
+      "entrypoint": "preprocessing.bert:main",
+      "description": "Modulo de preprocesamiento de embeddings tipo BERT",
+      "status": "active",
+      "include": "preprocessing"
+>>>>>>> Stashed changes
     }
   }
 }
