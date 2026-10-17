@@ -10,7 +10,7 @@ import pandas as pd
 from scipy.sparse import save_npz
 from nltk.tokenize import word_tokenize as wt
 import requests
-from .utils import extractor_reviews, ejecutar_etapa
+from .utils import extractor_reviews, ejecutar_etapa, obtener_limit, guardar_vocabulario, verificar_recursos_nltk
 
 print("LA VECTORIZACION ELMO SE ESTA EJECUTANDO")
 
@@ -54,12 +54,17 @@ def main():
             'ejecute primero el comando "extractor" y despues "clean".'
         )
         return
+    verificar_recursos_nltk()
+
     print("\nse esta cargando el dataset\n", flush=True)
+
+    limit = obtener_limit()
 
     df = ejecutar_etapa(
         "carga del dataset",
         pd.read_csv,
-        config.dataset_clean
+        config.dataset_clean,
+        nrows=limit
     )
 
     reviews = ejecutar_etapa(               # devuelve lista de reviews como strings
@@ -79,6 +84,13 @@ def main():
     ))
 
     print(f"\nLa cardinalidad del vocabulario es de {len(vocabulario)}")
+
+    ejecutar_etapa(
+        "Exportación del vocabulario CSV",
+        guardar_vocabulario,
+        vocabulario,
+        config.vocabulario_Path
+    )
     
     print(
         "\nse procede a cargar el modelo ELMo.\n",

@@ -20,6 +20,7 @@ idf_bigram = DATA / "idf_bigram.csv"
 idf_monogram = DATA / "idf_monogram.csv"
 elmo_vect = DATA / "elmo_vect.npz" # exportación de elmo 
 elmo_load = DATA / "model_elmo.zip" # carga de elmo
+vocabulario_Path = DATA / "elmo_vocab.csv"
 
 negaciones_path = DATA / "negaciones.json"
 
