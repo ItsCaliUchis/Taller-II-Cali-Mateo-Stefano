@@ -1,11 +1,15 @@
+
 import argparse
+import csv
 from pathlib import Path
 
 import config
 import pandas as pd
+from scipy.sparse import save_npz
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 from .utils import extractor_reviews, ejecutar_etapa
+
 
 def obtener_limit():
     parser = argparse.ArgumentParser(
@@ -37,6 +41,22 @@ def obtener_ruta_salida(output_path, limit):
     )
 
 
+def obtener_ruta_vocabulario(matrix_path):
+    matrix_path = Path(matrix_path)
+    return matrix_path.with_name(
+        f"{matrix_path.stem}_vocab.csv"
+    )
+
+
+def guardar_vocabulario(vocabulary, output_path):
+    with open(output_path, "w", encoding="utf-8", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerow(["index", "term"])
+
+        for index, term in enumerate(vocabulary):
+            writer.writerow([index, term])
+
+
 def main(
     ngram_range: tuple[int, int],
     output_path: str,
@@ -53,6 +73,9 @@ def main(
         return
 
     output_file = obtener_ruta_salida(output_path, limit)
+
+    matrix_file = output_file.with_suffix(".npz")
+    vocabulary_file = obtener_ruta_vocabulario(matrix_file)
 
     print(
         f"\nConfiguración: {nombre} | "
@@ -97,22 +120,23 @@ def main(
     )
 
     try:
-        tfidf = ejecutar_etapa(
-            "Construcción del DataFrame disperso",
-            pd.DataFrame.sparse.from_spmatrix,
-            matrix,
-            columns=vocabulary
+        ejecutar_etapa(
+            "Exportación de matriz dispersa NPZ",
+            save_npz,
+            matrix_file,
+            matrix
         )
 
         ejecutar_etapa(
-            "Exportación CSV",
-            tfidf.to_csv,
-            output_file,
-            index=False
+            "Exportación de vocabulario CSV",
+            guardar_vocabulario,
+            vocabulary,
+            vocabulary_file
         )
 
         print(
-            f"\nMatriz TF-IDF guardada en: {output_file}",
+            f"\nMatriz dispersa guardada en: {matrix_file}"
+            f"\nVocabulario guardado en: {vocabulary_file}",
             flush=True
         )
 
