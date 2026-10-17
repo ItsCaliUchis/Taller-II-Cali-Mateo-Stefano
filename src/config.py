@@ -22,6 +22,11 @@ elmo_vect = DATA / "elmo_vect.npz" # exportación de elmo
 elmo_load = DATA / "model_elmo.zip" # carga de elmo
 vocabulario_Path = DATA / "elmo_vocab.csv"
 
+# Configuración de FastText
+MODELO_FASTTEXT = "fasttext-wiki-news-subwords-300"
+fasttext_embeddings = DATA / "fasttext_embeddings.csv"
+FASTTEXT_NROWS = None
+
 negaciones_path = DATA / "negaciones.json"
 
 def cargar_negaciones():
