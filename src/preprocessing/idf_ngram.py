@@ -1,60 +1,10 @@
-
-import argparse
-import csv
-from pathlib import Path
-
 import config
 import pandas as pd
 from scipy.sparse import save_npz
 from sklearn.feature_extraction.text import TfidfVectorizer
+from pathlib import Path
 
-from .utils import extractor_reviews, ejecutar_etapa
-
-
-def obtener_limit():
-    parser = argparse.ArgumentParser(
-        description="Generación de matrices TF-IDF de n-gramas."
-    )
-    parser.add_argument(
-        "--limit",
-        type=int,
-        default=None,
-        help="Cantidad máxima de reseñas a procesar. Por defecto, todas."
-    )
-
-    args = parser.parse_args()
-
-    if args.limit is not None and args.limit <= 0:
-        parser.error("--limit debe ser un entero positivo.")
-
-    return args.limit
-
-
-def obtener_ruta_salida(output_path, limit):
-    output_path = Path(output_path)
-
-    if limit is None:
-        return output_path
-
-    return output_path.with_name(
-        f"{output_path.stem}_limit_{limit}{output_path.suffix}"
-    )
-
-
-def obtener_ruta_vocabulario(matrix_path):
-    matrix_path = Path(matrix_path)
-    return matrix_path.with_name(
-        f"{matrix_path.stem}_vocab.csv"
-    )
-
-
-def guardar_vocabulario(vocabulary, output_path):
-    with open(output_path, "w", encoding="utf-8", newline="") as file:
-        writer = csv.writer(file)
-        writer.writerow(["index", "term"])
-
-        for index, term in enumerate(vocabulary):
-            writer.writerow([index, term])
+from .utils import extractor_reviews, ejecutar_etapa, obtener_limit, obtener_ruta_salida, obtener_ruta_vocabulario, guardar_vocabulario, verificar_recursos_nltk
 
 
 def main(
@@ -63,6 +13,7 @@ def main(
     nombre: str,
     limit: int | None = None
 ):
+    verificar_recursos_nltk()
     dataset_path = Path(config.dataset_clean)
 
     if not dataset_path.exists():

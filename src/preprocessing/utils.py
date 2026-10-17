@@ -1,9 +1,13 @@
+import nltk
 import config
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize as wt
 from itertools import cycle
 from threading import Event, Thread
 from time import perf_counter
+import argparse
+import csv
+from pathlib import Path
 
 import psutil
 
@@ -83,3 +87,61 @@ def extractor_reviews(df):
         vec_reviews.append(review_normalize)
 
     return vec_reviews
+
+def obtener_limit():
+    parser = argparse.ArgumentParser(
+        description="Generación de matrices TF-IDF de n-gramas."
+    )
+    parser.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Cantidad máxima de reseñas a procesar. Por defecto, todas."
+    )
+
+    args = parser.parse_args()
+
+    if args.limit is not None and args.limit <= 0:
+        parser.error("--limit debe ser un entero positivo.")
+
+    return args.limit
+
+def obtener_ruta_salida(output_path, limit):
+    output_path = Path(output_path)
+
+    if limit is None:
+        return output_path
+
+    return output_path.with_name(
+        f"{output_path.stem}_limit_{limit}{output_path.suffix}"
+    )
+
+
+def obtener_ruta_vocabulario(matrix_path):
+    matrix_path = Path(matrix_path)
+    return matrix_path.with_name(
+        f"{matrix_path.stem}_vocab.csv"
+    )
+
+
+def guardar_vocabulario(vocabulary, output_path):
+    with open(output_path, "w", encoding="utf-8", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerow(["index", "term"])
+
+        for index, term in enumerate(vocabulary):
+            writer.writerow([index, term])
+
+
+def verificar_recursos_nltk():
+    recursos = {
+        "tokenizers/punkt_tab": "punkt_tab",
+        "corpora/stopwords": "stopwords",
+    }
+
+    for ruta, nombre in recursos.items():
+        try:
+            nltk.data.find(ruta)
+        except LookupError:
+            print(f"Descargando recurso NLTK: {nombre}...")
+            nltk.download(nombre, quiet=True)

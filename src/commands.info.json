@@ -63,6 +63,13 @@
       "status": "active",
       "include": "preprocessing",
       "supports_help": false
+    },
+    "elmo": {
+      "entrypoint": "preprocessing.elmo:main",
+      "description": "Modulo de preprocesamiento de embeddings tipo ELMo",
+      "status": "active",
+      "include": "preprocessing",
+      "supports_help": false
     }
   }
 }
