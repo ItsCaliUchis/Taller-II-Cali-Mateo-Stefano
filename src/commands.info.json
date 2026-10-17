@@ -58,8 +58,8 @@
       "supports_help": true
     },
     "fasttext": {
-      "entrypoint": "preprocessing.test:main",
-      "description": "modulo de prueba xd",
+      "entrypoint": "preprocessing.fasttext:main",
+      "description": "Modulo de procesamiento de embeddings tipo FastText",
       "status": "active",
       "include": "preprocessing",
       "supports_help": false

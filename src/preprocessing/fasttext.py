@@ -60,6 +60,10 @@ def main():
     resultados= []
 
     for palabra in palabras:
+        if palabra not in modelo.key_to_index:
+            print(f"palabra no encontrada en el modelo: {palabra}")
+            continue
+        
         vector = modelo[palabra]
         fila = {"palabra": palabra}
         fila.update({
