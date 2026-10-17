@@ -16,10 +16,13 @@ TOML_PATH = PROJECT_ROOT / "pyproject.toml"
 dataset_raw = DATA / "dataset_raw.csv"
 dataset_clean = DATA / "dataset_clean.csv"
 bow_vect = DATA / "bow_vect.csv"
+idf_bigram = DATA / "idf_bigram.csv"
 negaciones_path = DATA / "negaciones.json"
 
-if Path(negaciones_path).exists():
-    with open(negaciones_path, "r", encoding="utf-8") as file:
-        negaciones = json.load(file)
-else:
-    negaciones = []
+def cargar_negaciones():
+    if Path(negaciones_path).exists():
+        with open(negaciones_path, "r", encoding="utf-8") as file:
+            contenido = file.read().strip()
+            return json.loads(contenido) if contenido else []
+
+    return []

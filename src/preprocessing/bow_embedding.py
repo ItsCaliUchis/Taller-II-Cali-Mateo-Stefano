@@ -8,7 +8,7 @@ from nltk.corpus import stopwords
 
 
 def extractor_reviews(df):
-    negaciones = config.negaciones
+    negaciones = config.cargar_negaciones()
     STOPWORDS = list(set((stopwords.words("english")))-set(negaciones))
     vec_reviews = []
     for i, review in df["reviews"].items():
