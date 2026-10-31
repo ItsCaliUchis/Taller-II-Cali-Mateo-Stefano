@@ -4,7 +4,7 @@ from scipy.sparse import save_npz
 from sklearn.feature_extraction.text import TfidfVectorizer
 from pathlib import Path
 
-from .utils import extractor_reviews, ejecutar_etapa, obtener_limit, obtener_ruta_salida, obtener_ruta_vocabulario, guardar_vocabulario, verificar_recursos_nltk
+from utils import extractor_reviews, ejecutar_etapa, obtener_limit, obtener_ruta_salida, obtener_ruta_vocabulario, guardar_vocabulario, verificar_recursos_nltk
 
 
 def main(

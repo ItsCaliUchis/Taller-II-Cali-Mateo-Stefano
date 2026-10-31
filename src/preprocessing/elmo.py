@@ -10,7 +10,7 @@ import pandas as pd
 from scipy.sparse import save_npz
 from nltk.tokenize import word_tokenize as wt
 import requests
-from .utils import extractor_reviews, ejecutar_etapa, obtener_limit, guardar_vocabulario, verificar_recursos_nltk
+from utils import extractor_reviews, ejecutar_etapa, obtener_limit, guardar_vocabulario, verificar_recursos_nltk
 
 print("LA VECTORIZACION ELMO SE ESTA EJECUTANDO")
 

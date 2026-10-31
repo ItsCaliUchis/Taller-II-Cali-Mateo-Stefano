@@ -43,6 +43,8 @@ packages = [
     {include = "extract", from = "src"},
     {include = "list_tools.py", from = "src"},
     {include = "preprocessing", from = "src"},
+    {include = "training", from = "src"},
+    {include = "utils.py", from = "src"},
 ]
 
 

@@ -8,6 +8,9 @@ from time import perf_counter
 import argparse
 import csv
 from pathlib import Path
+import numpy as np
+import pandas as pd
+import subprocess
 
 import psutil
 
@@ -145,3 +148,73 @@ def verificar_recursos_nltk():
         except LookupError:
             print(f"Descargando recurso NLTK: {nombre}...")
             nltk.download(nombre, quiet=True)
+
+def verificar_embeddings():
+    X_bow = None
+    X_bigram = None
+    X_monogram = None
+
+    # BOW ======================
+    if Path(config.bow_vect).exists():
+        data_bow = np.load(config.bow_vect)
+        X_bow = data_bow['data']
+
+    if not Path(config.bow_vect).exists():
+
+        print(f'no existen los embeddings de bow en la ruta "{config.bow_vect}"')
+        opcion = input("¿Desea cargar los embeddings de bow? [s/n]: ").lower()
+
+        if opcion == "s":
+            subprocess.run(["poetry", "run", "bow"], check=True)
+        else:
+            print("Se continua el proceso sin los embeddings bow")
+
+    # IDF BIGRAM =============================
+
+    if Path(config.idf_bigram).exists():
+        data_bigram = np.load(config.idf_bigram)
+        X_bigram = data_bigram['data']
+
+    if not Path(config.idf_bigram).exists():
+
+        print(f'no existen los embeddings de bow en la ruta "{config.idf_bigram}"')
+        opcion = input("¿Desea cargar los embeddings de tf-idf bigrama? [s/n]: ").lower()
+
+        if opcion == "s":
+            subprocess.run(["poetry", "run", "idfbigram"], check=True)
+        else:
+            print("Se continua el proceso sin los embeddings de tf-idf bigrama")
+
+    # IDF MONOGRAM ====================
+
+    if Path(config.idf_monogram).exists():
+        data_monogram = np.load(config.idf_monogram)
+        X_monogram = data_monogram['data']
+
+    if not Path(config.idf_monogram).exists():
+
+        print(f'no existen los embeddings de bow en la ruta "{config.idf_monogram}"')
+        opcion = input("¿Desea cargar los embeddings de tf-idf monogram? [s/n]: ").lower()
+
+        if opcion == "s":
+            subprocess.run(["poetry", "run", "idfmonogram"], check=True)
+        else:
+            print("Se continua el proceso sin los embeddings de tf-idf monogram")
+
+    return X_bow, X_bigram, X_monogram
+
+    """
+    if Path(config.fasttext_embeddings).exists():
+        data_fasttext = np.load(config.fasttext_embeddings)
+        X_fasttext = data["embeddings"]
+
+    if not Path(config.fasttext_embeddings).exists():
+
+        print(f'no existen los embeddings de fasttext en la ruta "{config.fasttext_embeddings}"')
+        opcion = input("¿Desea cargar los embeddings de tf-idf monogram? [s/n]").lower()
+
+        if opcion == "s":
+            subprocess.run(["poetry", "run", "fasttext"], check=True)
+        else:
+            print("Se continua el proceso sin los embeddings de fasttext")
+    """

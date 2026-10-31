@@ -17,8 +17,8 @@ dataset_raw = DATA / "dataset_raw.csv"
 dataset_clean = DATA / "dataset_clean.csv"
 bow_vect = DATA / "bow_vect.npz"
 bow_vocab = DATA / "bow_vocab.csv"
-idf_bigram = DATA / "idf_bigram.csv"
-idf_monogram = DATA / "idf_monogram.csv"
+idf_bigram = DATA / "idf_bigram.npz"
+idf_monogram = DATA / "idf_monogram.npz"
 elmo_vect = DATA / "elmo_vect.npz" # exportación de elmo 
 elmo_load = DATA / "model_elmo.zip" # carga de elmo
 vocabulario_elmo = DATA / "elmo_vocab.csv"
@@ -28,6 +28,7 @@ bert_vect = DATA / "bert_vect.npz"
 # Configuración de FastText
 MODELO_FASTTEXT = "fasttext-wiki-news-subwords-300"
 fasttext_embeddings = DATA / "fasttext_embeddings.csv"
+fasttext_vocab = DATA / "ft_vocab.csv"
 FASTTEXT_NROWS = None
 
 negaciones_path = DATA / "negaciones.json"

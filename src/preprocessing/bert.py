@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from nltk.tokenize import word_tokenize as wt
 from scipy.sparse import save_npz
-from .utils import extractor_reviews, ejecutar_etapa, obtener_limit, guardar_vocabulario, verificar_recursos_nltk
+from utils import extractor_reviews, ejecutar_etapa, obtener_limit, guardar_vocabulario, verificar_recursos_nltk
 from transformers import BertTokenizer, BertModel
 import tensorflow
 import torch

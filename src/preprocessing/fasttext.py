@@ -4,7 +4,8 @@ import argparse
 import config
 import pandas as pd
 from gensim import downloader
-from .utils import extractor_reviews, ejecutar_etapa
+from nltk.tokenize import word_tokenize as wt
+from utils import extractor_reviews, ejecutar_etapa, guardar_vocabulario
 
 MODELO_FASTTEXT = config.MODELO_FASTTEXT
 RUTA_SALIDA = config.fasttext_embeddings
@@ -71,6 +72,16 @@ def main():
         df
     )
 
+    sentences = [
+        wt(review) for review in reviews
+    ]
+
+    vocabulario = sorted(set(
+    token
+    for review in sentences
+    for token in review
+    ))
+
     print("\nSe procede a cargar el modelo FastText.\n", flush=True)
 
     modelo = ejecutar_etapa(
@@ -122,9 +133,9 @@ def main():
 
     ejecutar_etapa(
         "exportación CSV",
-        embeddings.to_csv,
-        ruta_salida,
-        index=False
+        guardar_vocabulario,
+        vocabulario,
+        config.fasttext_vocab
     )
 
     print(

@@ -4,7 +4,7 @@ import pandas as pd
 from sklearn.feature_extraction.text import CountVectorizer as CV
 import numpy as np
 from scipy.sparse import save_npz
-from .utils import extractor_reviews, ejecutar_etapa, obtener_limit, guardar_vocabulario, verificar_recursos_nltk
+from utils import extractor_reviews, ejecutar_etapa, obtener_limit, guardar_vocabulario, verificar_recursos_nltk
 
 def main():
     if not Path(config.dataset_clean).exists():
