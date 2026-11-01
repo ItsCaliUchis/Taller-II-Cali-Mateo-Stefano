@@ -9,6 +9,7 @@ Taller-II-Cali-Mateo-Stefano/
 ├── src/
 │   ├── config.py
 │   ├── list_tools.py
+│   ├── utils.py
 │   ├── commands.info.json
 │   ├── extract/
 │   │   ├── __init__.py
@@ -17,14 +18,18 @@ Taller-II-Cali-Mateo-Stefano/
 │   │   ├── __init__.py
 │   │   ├── cleanup.py
 │   │   └── exploratorio.py
-│   └── preprocessing/
-│       ├── __init__.py
-│       ├── bow_embedding.py
-│       ├── idf_ngram.py
-│       ├── bert.py
-│       ├── elmo.py
-│       ├── fasttext.py
-│       └── utils.py
+│   ├── preprocessing/
+│   │   ├── __init__.py
+│   │   ├── bow_embedding.py
+│   │   ├── idf_ngram.py
+│   │   ├── bert.py
+│   │   ├── elmo.py
+│   │   └── fasttext.py
+│   └── training/
+│      ├── __init__.py
+│      └── sgd.py
+│
+│       
 ├── data/
 │   ├── negaciones.json
 │   └── Archivos generados durante el procesamiento
@@ -99,7 +104,7 @@ poetry run <comando> --help
 El pipeline se organiza en tres etapas principales, que utilizan los archivos generados en las etapas anteriores como entrada para el procesamiento siguiente.
 
 ```text
-API ──> [Extracción] ──> dataset_raw.csv ──> [Exploración / Limpieza] ──> dataset_clean.csv ──> [Vectorización (BoW / TF-IDF)]
+API ──> [Extracción] ──> dataset_raw.csv ──> [Exploración / Limpieza] ──> dataset_clean.csv ──> [Vectorización (BoW / TF-IDF)] ──> [Entrenamiento (SGD, ...)] 
 
 ```
 
@@ -173,6 +178,21 @@ El archivo de vocabulario contiene dos columnas: `index` (posición de la column
 
 ---
 
+### 4. Entrenamiento
+
+Por medio de diversos algoritmos de aprendizaje de máquina supervisado, se entrenan tres tipos de embeddings: `BoW`, `TF-IDF` (monograma y bigrama) y `FastText`. 
+
+Se mapea el dataset teniendo en cuenta la siguiente clasificación de labels:
+
+0: "negative",
+1: "negative",
+2: "neutral",
+3: "positive",
+4: "positive"
+
+Por último, se obtienen las matrices de confusión de cada embedding conjunto a un `classficiation_report` y una curva de aprendizaje.
+
+
 ## Estado actual del proyecto
 
 * [x] Configuración del entorno con Poetry.
@@ -191,4 +211,5 @@ El archivo de vocabulario contiene dos columnas: `index` (posición de la column
 * [x] Argumento opcional `--limit` para pruebas con una cantidad acotada de reseñas en los comandos compatibles.
 * [x] Exportación de matrices de representación en formato disperso `.npz` cuando corresponde.
 * [x] Exportación de vocabularios en archivos CSV independientes.
+* [x] Entrenamiento de embeddings BoW, TF-IDF y FastText por medio de método SGD.
 * [ ] Próximas etapas de procesamiento y análisis.
