@@ -35,6 +35,7 @@ idfBigram = "preprocessing.idf_ngram:bigrama"
 fasttext = "preprocessing.fasttext:main"
 elmo = "preprocessing.elmo:main"
 bert = "preprocessing.bert:main"
+sgd = "training.sgd:main"
 
 [tool.poetry]
 packages = [

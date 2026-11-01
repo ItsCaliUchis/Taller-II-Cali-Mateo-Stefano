@@ -70,6 +70,13 @@
       "status": "active",
       "include": "preprocessing",
       "supports_help": true
+    },
+    "sgd": {
+      "entrypoint": "training.sgd:main",
+      "description": "Entrenamiento de embeddings por medio del método Stochastic Gradient Descent",
+      "status": "active",
+      "include": "training",
+      "supports_help": false
     }
   }
 }

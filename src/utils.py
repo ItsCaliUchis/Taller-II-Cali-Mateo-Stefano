@@ -8,7 +8,7 @@ from time import perf_counter
 import argparse
 import csv
 from pathlib import Path
-import numpy as np
+from scipy.sparse import load_npz
 import pandas as pd
 import subprocess
 
@@ -156,8 +156,7 @@ def verificar_embeddings():
 
     # BOW ======================
     if Path(config.bow_vect).exists():
-        data_bow = np.load(config.bow_vect)
-        X_bow = data_bow['data']
+        X_bow = load_npz(config.bow_vect)
 
     if not Path(config.bow_vect).exists():
 
@@ -166,14 +165,14 @@ def verificar_embeddings():
 
         if opcion == "s":
             subprocess.run(["poetry", "run", "bow"], check=True)
+            X_bow = load_npz(config.bow_vect)          
         else:
             print("Se continua el proceso sin los embeddings bow")
 
     # IDF BIGRAM =============================
 
     if Path(config.idf_bigram).exists():
-        data_bigram = np.load(config.idf_bigram)
-        X_bigram = data_bigram['data']
+        X_bigram = load_npz(config.idf_bigram)
 
     if not Path(config.idf_bigram).exists():
 
@@ -182,14 +181,14 @@ def verificar_embeddings():
 
         if opcion == "s":
             subprocess.run(["poetry", "run", "idfbigram"], check=True)
+            X_bigram = load_npz(config.idf_bigram)
         else:
             print("Se continua el proceso sin los embeddings de tf-idf bigrama")
 
     # IDF MONOGRAM ====================
 
     if Path(config.idf_monogram).exists():
-        data_monogram = np.load(config.idf_monogram)
-        X_monogram = data_monogram['data']
+        X_monogram = load_npz(config.idf_monogram)
 
     if not Path(config.idf_monogram).exists():
 
@@ -198,6 +197,7 @@ def verificar_embeddings():
 
         if opcion == "s":
             subprocess.run(["poetry", "run", "idfmonogram"], check=True)
+            X_monogram = load_npz(config.idf_monogram)
         else:
             print("Se continua el proceso sin los embeddings de tf-idf monogram")
 
