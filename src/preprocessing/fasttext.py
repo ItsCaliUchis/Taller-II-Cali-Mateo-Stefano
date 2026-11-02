@@ -15,7 +15,7 @@ RUTA_SALIDA = config.fasttext_embeddings
 
 def obtener_limit():
     parser = argparse.ArgumentParser(
-        description="generacion de embeddings de palabras con FastText"
+        description="generacion de embeddings por reseña con FastText"
     )
     parser.add_argument(
         "--limit",
@@ -73,12 +73,19 @@ def main():
         extractor_reviews,
         df
     )
+    
+    if len(reviews) != len(df):
+        raise ValueError(
+            "la cantidad de reseñas procesadas no coincide "
+            "con la cantidad de filas "
+        )
 
-    #generacion del vocabulario
+    #generacion de los tokens por reseña
     sentences = [
         wt(review) for review in reviews
     ]
 
+    #generacion del vocabulario
     vocabulario = sorted(set(
     token
     for review in sentences
@@ -98,8 +105,9 @@ def main():
         flush=True
     )
 
-    vectores = []
-
+    #generacion de un vector por palabra
+    embeddings_palabras = {}
+    
     for palabra in vocabulario:
         try:
             vector = modelo.get_vector(palabra)
@@ -107,19 +115,33 @@ def main():
             print(f"palabra no encontrada en el modelo: {palabra}")
             vector = np.zeros(modelo.vector_size, dtype=np.float32)
 
-        vectores.append(vector)
-
-    #construccion de la matriz dispersa
-    if vectores:
-        matriz_embeddings = csr_matrix(
-            np.asarray(vectores, dtype=np.float32)
-        )
-    else:
-        matriz_embeddings = csr_matrix(
-            (0, modelo.vector_size),
+        embeddings_palabras[palabra] = np.asarray(
+            vector,
             dtype=np.float32
         )
 
+    #generacion de un vector promedio por reseña
+    matriz_reseñas = np.zeros(
+        (len(sentences), modelo.vector_size),
+        dtype=np.float32
+    )
+
+    for i, review in enumerate(sentences):
+        if not review:
+            continue
+
+        suma_vectores = np.zeros(
+            modelo.vector_size,
+            dtype=np.float32
+        )
+
+        for palabra in review:
+            suma_vectores += embeddings_palabras[palabra]
+
+        matriz_reseñas[i] = suma_vectores  / len(review)
+
+    #construccion de la matriz dispersa
+    matriz_embeddings = csr_matrix(matriz_reseñas)
     print(
         f"dimensiones de la matriz: {matriz_embeddings.shape}",
         flush=True
@@ -133,7 +155,7 @@ def main():
         config.fasttext_vocab
     )
 
-    #exportacion de la matriz dispersa a npz
+    #exportacion de la matriz de embeddings por reseña
     ejecutar_etapa(
         "exportacion de la matriz dispersa npz",
         save_npz,
