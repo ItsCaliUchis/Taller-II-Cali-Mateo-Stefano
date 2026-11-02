@@ -31,7 +31,13 @@ df["sentiment"] = df["label"].map({
 
 y = df["sentiment"]
 
-def entrenar(X_modelo,y):
+cv = StratifiedKFold(n_splits=3, shuffle=True, random_state=102)
+
+def modelo():
+    clf = SGDClassifier(loss="log_loss", penalty="l2", max_iter=1000) # usamos 1000 para mayor convergencia
+    return clf
+
+def entrenar(X_modelo,y,clf):
 
     X_train, X_test, y_train, y_test = train_test_split(
         X_modelo,
@@ -43,12 +49,22 @@ def entrenar(X_modelo,y):
         random_state=102
     )
 
-# === CURVA DE APRENDIZAJE =====
+    clf.fit(X_train, y_train)
 
-    clf = SGDClassifier(loss="log_loss", penalty="l2", max_iter=1000) # usamos 1000 para mayor convergencia
-    
+    y_pred = clf.predict(X_test)
 
-    cv = StratifiedKFold(n_splits=3, shuffle=True, random_state=102)
+    cm = confusion_matrix(
+    y_test,
+    y_pred,
+    labels=["negative", "neutral", "positive"]
+    )
+
+
+    print(classification_report(y_test, y_pred))
+    print("\n")
+
+
+# CURVA DE APRENDIZAJE
 
     train_sizes, train_scores, validation_scores = learning_curve(
         clf,
@@ -92,28 +108,24 @@ def entrenar(X_modelo,y):
     plt.grid()
     plt.show()
 
-# ==== ENTRENAMIENTO =====  
+    return cm
 
-    clf.fit(X_train, y_train)
+def graficar(matrices, nombres):
 
-    y_pred = clf.predict(X_test)
+    fig, axes = plt.subplots(nrows=1, ncols=3, figsize=(18,5))
+    
+    for ax, cm, nombre in zip(axes, matrices, nombres):
+        disp = ConfusionMatrixDisplay(
+        confusion_matrix=cm,
+        display_labels=["negative", "neutral", "positive"]
+        )
 
-    cm = confusion_matrix(
-    y_test,
-    y_pred,
-    labels=["negative", "neutral", "positive"]
-    )
+        disp.plot(cmap="Blues", ax=ax)
+        ax.set_title(nombre) 
 
-    disp = ConfusionMatrixDisplay(
-    confusion_matrix=cm,
-    display_labels=["negative", "neutral", "positive"]
-    )
+    plt.tight_layout(pad=2)
+    plt.show()
 
-    print(classification_report(y_test, y_pred))
-    print("\n")
-
-    disp.plot(cmap="Blues")
-    plt.show() 
 
 def main():
 
@@ -123,14 +135,23 @@ def main():
 
 
     X_bow, X_bigram, X_monogram = verificar_embeddings()
-    """print("Dimensiones de X:", X_bow.shape)
+    """print("Dimensiones de X:", X_ft.shape)
     print("Dimensiones de y:", y.shape)
 
-    assert X_bow.shape[0] == len(y) La cantidad de reviews y etiquetas no coincide"""
+    assert X_ft.shape[0] == len(y) # La cantidad de reviews y etiquetas no coincide"""
     
-    entrenar(X_bow,y)
-    entrenar(X_bigram,y)
-    entrenar(X_monogram,y)
+
+    embeddings = [X_bow, X_bigram, X_monogram]
+    nombres = ["BOW", "TF-IDF Bigrama", "TF-IDF Monograma"]
+    matrices = []
+
+    for embedding, nombre in zip(embeddings,nombres):
+        print(f"\nEntrenando con {nombre}")
+        clf = modelo()
+        cm = entrenar(embedding,y,clf)
+        matrices.append(cm)
+
+    graficar(matrices, nombres)
 
 if __name__ == "__main__":
     main()

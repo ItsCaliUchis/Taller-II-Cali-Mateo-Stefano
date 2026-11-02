@@ -153,6 +153,7 @@ def verificar_embeddings():
     X_bow = None
     X_bigram = None
     X_monogram = None
+    X_ft = None
 
     # BOW ======================
     if Path(config.bow_vect).exists():
@@ -162,12 +163,14 @@ def verificar_embeddings():
 
         print(f'no existen los embeddings de bow en la ruta "{config.bow_vect}"')
         opcion = input("¿Desea cargar los embeddings de bow? [s/n]: ").lower()
+        print("\n")
 
         if opcion == "s":
             subprocess.run(["poetry", "run", "bow"], check=True)
             X_bow = load_npz(config.bow_vect)          
         else:
             print("Se continua el proceso sin los embeddings bow")
+            print("\n")
 
     # IDF BIGRAM =============================
 
@@ -178,12 +181,14 @@ def verificar_embeddings():
 
         print(f'no existen los embeddings de bow en la ruta "{config.idf_bigram}"')
         opcion = input("¿Desea cargar los embeddings de tf-idf bigrama? [s/n]: ").lower()
+        print("\n")
 
         if opcion == "s":
             subprocess.run(["poetry", "run", "idfbigram"], check=True)
             X_bigram = load_npz(config.idf_bigram)
         else:
             print("Se continua el proceso sin los embeddings de tf-idf bigrama")
+            print("\n")
 
     # IDF MONOGRAM ====================
 
@@ -194,27 +199,30 @@ def verificar_embeddings():
 
         print(f'no existen los embeddings de bow en la ruta "{config.idf_monogram}"')
         opcion = input("¿Desea cargar los embeddings de tf-idf monogram? [s/n]: ").lower()
+        print("\n")
 
         if opcion == "s":
             subprocess.run(["poetry", "run", "idfmonogram"], check=True)
             X_monogram = load_npz(config.idf_monogram)
         else:
             print("Se continua el proceso sin los embeddings de tf-idf monogram")
+            print("\n")
 
-    return X_bow, X_bigram, X_monogram
 
-    """
-    if Path(config.fasttext_embeddings).exists():
-        data_fasttext = np.load(config.fasttext_embeddings)
-        X_fasttext = data["embeddings"]
+    """if Path(config.fasttext_embeddings).exists():
+        X_ft = load_npz(config.fasttext_embeddings)
 
     if not Path(config.fasttext_embeddings).exists():
 
         print(f'no existen los embeddings de fasttext en la ruta "{config.fasttext_embeddings}"')
-        opcion = input("¿Desea cargar los embeddings de tf-idf monogram? [s/n]").lower()
+        opcion = input("¿Desea cargar los embeddings de fasttext? [s/n]: ").lower()
+        print("\n")
 
         if opcion == "s":
             subprocess.run(["poetry", "run", "fasttext"], check=True)
+            X_ft = load_npz(config.fasttext_embeddings)
         else:
             print("Se continua el proceso sin los embeddings de fasttext")
-    """
+            print("\n")"""
+
+    return X_bow, X_bigram, X_monogram#, X_ft
