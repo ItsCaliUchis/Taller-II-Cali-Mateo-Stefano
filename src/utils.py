@@ -209,7 +209,7 @@ def verificar_embeddings():
             print("\n")
 
 
-    """if Path(config.fasttext_embeddings).exists():
+    if Path(config.fasttext_embeddings).exists():
         X_ft = load_npz(config.fasttext_embeddings)
 
     if not Path(config.fasttext_embeddings).exists():
@@ -223,6 +223,6 @@ def verificar_embeddings():
             X_ft = load_npz(config.fasttext_embeddings)
         else:
             print("Se continua el proceso sin los embeddings de fasttext")
-            print("\n")"""
+            print("\n")
 
-    return X_bow, X_bigram, X_monogram#, X_ft
+    return X_bow, X_bigram, X_monogram, X_ft

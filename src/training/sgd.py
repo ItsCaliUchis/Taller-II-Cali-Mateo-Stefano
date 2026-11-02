@@ -112,9 +112,9 @@ def entrenar(X_modelo,y,clf):
 
 def graficar(matrices, nombres):
 
-    fig, axes = plt.subplots(nrows=1, ncols=3, figsize=(18,5))
+    fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(18,5))
     
-    for ax, cm, nombre in zip(axes, matrices, nombres):
+    for ax, cm, nombre in zip(axes.flat, matrices, nombres):
         disp = ConfusionMatrixDisplay(
         confusion_matrix=cm,
         display_labels=["negative", "neutral", "positive"]
@@ -134,15 +134,16 @@ def main():
         return
 
 
-    X_bow, X_bigram, X_monogram = verificar_embeddings()
-    """print("Dimensiones de X:", X_ft.shape)
-    print("Dimensiones de y:", y.shape)
+    X_bow, X_bigram, X_monogram, X_ft = verificar_embeddings()
+    
+    #print("Dimensiones de X:", X_ft.shape)
+    #print("Dimensiones de y:", y.shape)
 
-    assert X_ft.shape[0] == len(y) # La cantidad de reviews y etiquetas no coincide"""
+    #assert X_ft.shape[0] == len(y) La cantidad de reviews y etiquetas no coincide
     
 
-    embeddings = [X_bow, X_bigram, X_monogram]
-    nombres = ["BOW", "TF-IDF Bigrama", "TF-IDF Monograma"]
+    embeddings = [X_bow, X_bigram, X_monogram, X_ft]
+    nombres = ["BOW", "TF-IDF Bigrama", "TF-IDF Monograma", "FastText"]
     matrices = []
 
     for embedding, nombre in zip(embeddings,nombres):
