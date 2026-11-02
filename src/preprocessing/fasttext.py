@@ -1,10 +1,12 @@
 from pathlib import Path
-import re
 import argparse
 import config
 import pandas as pd
+import numpy as np
+
 from gensim import downloader
 from nltk.tokenize import word_tokenize as wt
+from scipy.sparse import csr_matrix, save_npz
 from utils import extractor_reviews, ejecutar_etapa, guardar_vocabulario
 
 MODELO_FASTTEXT = config.MODELO_FASTTEXT
@@ -72,6 +74,7 @@ def main():
         df
     )
 
+    #generacion del vocabulario
     sentences = [
         wt(review) for review in reviews
     ]
@@ -95,54 +98,54 @@ def main():
         flush=True
     )
 
-    palabras = set()
+    vectores = []
 
-    for review in reviews:
-        tokens = re.findall(r"\b\w+\b", review.lower())
-        palabras.update(tokens)
+    for palabra in vocabulario:
+        try:
+            vector = modelo.get_vector(palabra)
+        except (KeyError, ValueError):
+            print(f"palabra no encontrada en el modelo: {palabra}")
+            vector = np.zeros(modelo.vector_size, dtype=np.float32)
 
-    palabras = sorted(palabras)
+        vectores.append(vector)
+
+    #construccion de la matriz dispersa
+    if vectores:
+        matriz_embeddings = csr_matrix(
+            np.asarray(vectores, dtype=np.float32)
+        )
+    else:
+        matriz_embeddings = csr_matrix(
+            (0, modelo.vector_size),
+            dtype=np.float32
+        )
 
     print(
-        f"palabras únicas encontradas: {len(palabras)}",
+        f"dimensiones de la matriz: {matriz_embeddings.shape}",
         flush=True
     )
 
-    resultados = []
-
-    for palabra in palabras:
-        if palabra not in modelo.key_to_index:
-            print(f"palabra no encontrada en el vocabulario: {palabra}")
-            continue
-
-        vector = modelo[palabra]
-
-        fila = {"palabra": palabra}
-        fila.update({
-            f"dim_{i + 1}": float(valor)
-            for i, valor in enumerate(vector)
-        })
-
-        resultados.append(fila)
-
-    embeddings = ejecutar_etapa(
-        "construcción de la tabla de embeddings",
-        pd.DataFrame,
-        resultados
-    )
-
+    #exportacion del vocabulario
     ejecutar_etapa(
-        "exportación CSV",
+        "exportación del vocabulario CSV",
         guardar_vocabulario,
         vocabulario,
         config.fasttext_vocab
+    )
+
+    #exportacion de la matriz dispersa a npz
+    ejecutar_etapa(
+        "exportacion de la matriz dispersa npz",
+        save_npz,
+        ruta_salida,
+        matriz_embeddings
     )
 
     print(
         f"\nembeddings FastText guardados en: {ruta_salida}",
         flush=True
     )
-
+    
 
 if __name__ == "__main__":
     main()

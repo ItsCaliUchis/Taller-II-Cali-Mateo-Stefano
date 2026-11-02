@@ -27,7 +27,7 @@ bert_vect = DATA / "bert_vect.npz"
 
 # Configuración de FastText
 MODELO_FASTTEXT = "fasttext-wiki-news-subwords-300"
-fasttext_embeddings = DATA / "fasttext_embeddings.csv"
+fasttext_embeddings = DATA / "fasttext_embeddings.npz"
 fasttext_vocab = DATA / "ft_vocab.csv"
 FASTTEXT_NROWS = None
 
