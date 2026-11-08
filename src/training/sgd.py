@@ -4,12 +4,17 @@ from utils import ejecutar_etapa, verificar_embeddings
 from pathlib import Path
 import subprocess
 import numpy as np
+import matplotlib.pyplot as plt
+from .graphics import graficar_curva_aprendizaje, graficar_matrices_confusion
 
 # ===== SCIKIT LEARN ==============
 from sklearn.linear_model import SGDClassifier
 from sklearn.model_selection import train_test_split, learning_curve, StratifiedKFold
 from sklearn.metrics import classification_report, confusion_matrix, ConfusionMatrixDisplay
-import matplotlib.pyplot as plt
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import make_pipeline
+from sklearn.inspection import DecisionBoundaryDisplay
+from sklearn.base import clone
 
 if not Path(config.dataset_clean).exists:
     print(f"La ruta para '{config.dataset_clean}' no existe")
@@ -33,17 +38,14 @@ y = df["sentiment"]
 
 cv = StratifiedKFold(n_splits=3, shuffle=True, random_state=102)
 
-def modelo():
-    clf = SGDClassifier(loss="log_loss", penalty="l2", max_iter=1000) # usamos 1000 para mayor convergencia
-    return clf
+def entrenar(X_modelo,y,clf,nombre_modelo):
 
-def entrenar(X_modelo,y,clf):
+    clf = clone(clf)
 
     X_train, X_test, y_train, y_test = train_test_split(
         X_modelo,
         y,
         train_size=0.80,
-        test_size=0.20,
         shuffle=True,
         stratify=y,
         random_state=102
@@ -58,7 +60,6 @@ def entrenar(X_modelo,y,clf):
     y_pred,
     labels=["negative", "neutral", "positive"]
     )
-
 
     print(classification_report(y_test, y_pred))
     print("\n")
@@ -76,55 +77,15 @@ def entrenar(X_modelo,y,clf):
         n_jobs=-1
     )
 
-    train_mean = np.mean(train_scores, axis=1)
-    validation_mean = np.mean(validation_scores, axis=1)
-
-    train_std = np.std(train_scores, axis=1)
-    validation_std = np.std(validation_scores, axis=1)
-
-    plt.figure(figsize=(10, 6))
-    plt.plot(train_sizes, train_mean, "o-", label="Training score")
-    plt.plot(train_sizes, validation_mean, "o-", label="Validation score")
-
-    plt.fill_between(
+    graficar_curva_aprendizaje(
         train_sizes,
-        train_mean - train_std,
-        train_mean + train_std,
-        alpha=0.15
+        train_scores,
+        validation_scores,
+        titulo=f"Curva de aprendizaje - {nombre_modelo}",
+        metrica="F1-score macro"
     )
-
-    plt.fill_between(
-        train_sizes,
-        validation_mean - validation_std,
-        validation_mean + validation_std,
-        alpha=0.15
-    )
-
-    plt.xlabel("Cantidad de muestras de entrenamiento")
-    plt.ylabel("F1-score macro")
-    plt.title(f"Curva de aprendizaje - SGDClassifier")
-
-    plt.legend()
-    plt.grid()
-    plt.show()
 
     return cm
-
-def graficar(matrices, nombres):
-
-    fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(18,5))
-    
-    for ax, cm, nombre in zip(axes.flat, matrices, nombres):
-        disp = ConfusionMatrixDisplay(
-        confusion_matrix=cm,
-        display_labels=["negative", "neutral", "positive"]
-        )
-
-        disp.plot(cmap="Blues", ax=ax)
-        ax.set_title(nombre) 
-
-    plt.tight_layout(pad=2)
-    plt.show()
 
 
 def main():
@@ -140,19 +101,38 @@ def main():
     #print("Dimensiones de y:", y.shape)
 
     #assert X_ft.shape[0] == len(y) La cantidad de reviews y etiquetas no coincide
-    
+
+    clf = SGDClassifier(loss="log_loss", penalty="l2", max_iter=1000)
+    clf_balanceado = make_pipeline(StandardScaler(with_mean=False), SGDClassifier(loss="log_loss", penalty="l2", max_iter=1000))
 
     embeddings = [X_bow, X_bigram, X_monogram, X_ft]
     nombres = ["BOW", "TF-IDF Bigrama", "TF-IDF Monograma", "FastText"]
-    matrices = []
+    matrices_sb = [] # sb = sin balancear
+    matrices_b = [] # b = balanceadas
 
     for embedding, nombre in zip(embeddings,nombres):
-        print(f"\nEntrenando con {nombre}")
-        clf = modelo()
-        cm = entrenar(embedding,y,clf)
-        matrices.append(cm)
+        print(f"\nEntrenando SGD sin escalado: {nombre}")
+        cm = entrenar(embedding,y,clf,nombre_modelo=f"SGD sin escalado {nombre}")
+        matrices_sb.append(cm)
+        
+    for embedding, nombre in zip(embeddings,nombres):
+        print(f"\nEntrenando SGD con StandardScaler: {nombre}")  
+        cm = entrenar(embedding,y,clf_balanceado,nombre_modelo=f"SGD escalado {nombre}")
+        matrices_b.append(cm)
 
-    graficar(matrices, nombres)
+    graficar_matrices_confusion(
+        matrices_sb,
+        nombres,
+        ["negative", "neutral", "positive"],
+        titulo="SGD sin escalado"
+    )
+
+    graficar_matrices_confusion(
+        matrices_b,
+        nombres,
+        ["negative", "neutral", "positive"],
+        titulo="SGD con StandardScaler"
+    )
 
 if __name__ == "__main__":
     main()

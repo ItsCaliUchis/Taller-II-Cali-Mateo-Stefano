@@ -27,6 +27,7 @@ Taller-II-Cali-Mateo-Stefano/
 │   │   └── fasttext.py
 │   └── training/
 │      ├── __init__.py
+│      ├── graphics.py
 │      └── sgd.py
 │
 │       
@@ -191,6 +192,8 @@ Se mapea el dataset teniendo en cuenta la siguiente clasificación de labels:
 4: "positive"
 
 Por último, se obtienen las matrices de confusión de cada embedding conjunto a un `classficiation_report` y una curva de aprendizaje.
+
+Además, se realiza una comparativa entre los modelos sin escalar y los modelos escalados por medio del método `StandardScaler`
 
 
 ## Estado actual del proyecto
