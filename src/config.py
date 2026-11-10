@@ -5,8 +5,12 @@ import json
 # de trabajo actual. El proyecto se instala en modo editable.
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DATA = PROJECT_ROOT / "data"
+CLASSIFICATION_REPORTS = PROJECT_ROOT / "classification_reports"
+OPTIMIZATION_RESULTS = PROJECT_ROOT / "optimization_results"
 
 DATA.mkdir(exist_ok=True)
+CLASSIFICATION_REPORTS.mkdir(exist_ok=True)
+OPTIMIZATION_RESULTS.mkdir(exist_ok=True)
 
 # Rutas utilizadas para la herramienta de registro de comandos.
 JSON_COMMANDS = PROJECT_ROOT / "src" / "commands.info.json"
@@ -24,8 +28,7 @@ elmo_load = DATA / "model_elmo.zip" # carga de elmo
 vocabulario_elmo = DATA / "elmo_vocab.csv"
 vocabulario_bert = DATA / "bert_vocab.csv"
 bert_vect = DATA / "bert_vect.npz"
-df_sb_sgd = DATA / "classification_report_sb_sgd.csv"
-df_b_sgd = DATA / "classification_report_b_sgd.csv"
+
 
 # Configuración de FastText
 MODELO_FASTTEXT = "fasttext-wiki-news-subwords-300"
@@ -35,6 +38,16 @@ FASTTEXT_NROWS = None
 
 negaciones_path = DATA / "negaciones.json"
 
+# Rutas de Classification Reports
+df_sb_sgd = CLASSIFICATION_REPORTS / "classification_report_sb_sgd.csv" # sin optimizar (no balanceado)
+df_b_sgd = CLASSIFICATION_REPORTS / "classification_report_b_sgd.csv" # sin optimizar (balanceado)
+df_optimizado_sb_sgd = CLASSIFICATION_REPORTS / "classification_report_opt_sb_sgd.csv" # optimizado (no balanceado)
+df_optimizado_b_sgd = CLASSIFICATION_REPORTS / "classification_report_opt_b_sgd.csv" # optimizado (balanceado)
+
+# Rutas de Resultados de Optimización de Modelos
+
+resultados_sgd = OPTIMIZATION_RESULTS / "resultados_sgd.json"
+
 def cargar_negaciones():
     if Path(negaciones_path).exists():
         with open(negaciones_path, "r", encoding="utf-8") as file:
@@ -42,3 +55,11 @@ def cargar_negaciones():
             return json.loads(contenido) if contenido else []
 
     return []
+
+def cargar_resultados_sgd():
+    if Path(resultados_sgd).exists():
+        with open(resultados_sgd, "r", encoding="utf-8") as file:
+            contenido = file.read().strip()
+            return json.loads(contenido) if contenido else {}
+
+    return {}

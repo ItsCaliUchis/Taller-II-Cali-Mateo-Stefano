@@ -28,19 +28,24 @@ Taller-II-Cali-Mateo-Stefano/
 │   └── training/
 │      ├── __init__.py
 │      ├── graphics.py
+│      ├── pca_exploratorio.py
 │      └── sgd.py
 │
 │       
 ├── data/
 │   ├── negaciones.json
 │   └── Archivos generados durante el procesamiento
+├── classification_reports/
+│   └── Archivos de la clase "classification reports" de Scikit Learn generados durante training de modelos
+├── optimization_results/
+│   └── resultados_sgd.json
 ├── pyproject.toml
 ├── poetry.lock
 └── README.md
 
 ```
 
-Los archivos de salida se generan según las rutas definidas en `src/config.py`. La carpeta `data/` se crea automáticamente al importar el módulo si todavía no existe.
+Los archivos de salida se generan según las rutas definidas en `src/config.py`. La carpeta `data/` se crea automáticamente al importar el módulo si todavía no existe, al igual que `classification_reports/` y `optimization_results/`
 
 ---
 
@@ -181,9 +186,26 @@ El archivo de vocabulario contiene dos columnas: `index` (posición de la column
 
 ### 4. Entrenamiento
 
-Por medio de diversos algoritmos de aprendizaje de máquina supervisado, se entrenan tres tipos de embeddings: `BoW`, `TF-IDF` (monograma y bigrama) y `FastText`. 
+El módulo de entrenamiento tiene como objetivo desarrollar, entrenar y evaluar distintos modelos de aprendizaje automático supervisado para Sentiment Analysis.
 
-Se mapea el dataset teniendo en cuenta la siguiente clasificación de labels:
+A partir de diferentes representaciones vectoriales del texto, se experimenta con distintos algoritmos de clasificación para analizar su capacidad de identificar sentimientos negativos, neutrales y positivos en las reseñas.
+
+El módulo contempla distintas etapas experimentales, que incluyen la preparación de los datos, el entrenamiento de modelos base, la evaluación de su rendimiento, la optimización de hiperparámetros y la comparación de resultados. Asimismo, se consideran diferentes configuraciones de los datos, como el escalado de características y el balance de clases, con el propósito de estudiar su influencia sobre el desempeño de los clasificadores.
+
+- **Módulo SGD:**
+
+Este algoritmo permite entrenar modelos de clasificación mediante actualizaciones iterativas de sus parámetros, utilizando muestras individuales o pequeños subconjuntos de datos para aproximar el gradiente de la función de pérdida.
+
+Se trabaja con cuatro representaciones vectoriales del texto:
+
+* BoW (Bag of Words).
+* TF-IDF con unigramas.
+* TF-IDF con unigramas y bigramas.
+* FastText.
+
+1) Preparación de los datos 
+
+Se realiza el mapeo de las etiquetas originales del dataset para agrupar las cinco categorías en tres clases de sentimiento:
 
 0: "negative",
 1: "negative",
@@ -191,9 +213,62 @@ Se mapea el dataset teniendo en cuenta la siguiente clasificación de labels:
 3: "positive",
 4: "positive"
 
-Por último, se obtienen las matrices de confusión de cada embedding conjunto a un `classficiation_report` y una curva de aprendizaje.
+2) Evaluación de modelos base: 
 
-Además, se realiza una comparativa entre los modelos sin escalar y los modelos escalados por medio del método `StandardScaler`
+En una primera instancia, se entrenan y evalúan los clasificadores con sus configuraciones estándar, sin realizar optimización de hiperparámetros.
+
+Se experimenta con las cuatro representaciones vectoriales, considerando dos configuraciones:
+
+* **Sin escalar:** se utilizan los valores originales de las representaciones vectoriales.
+* **Escalado:** se aplica `StandardScaler` para analizar el efecto de la estandarización sobre el rendimiento de los clasificadores.
+
+Se consideran tanto los conjuntos de datos balanceados como los no balanceados.
+
+Para evaluar los resultados se generan:
+
+- Matrices de confusión.
+- `Classification Reports`, que incluyen métricas de precision, recall, f1-score y support.
+- `Learning Curves`, para estudiar el comportamiento de los modelos según la cantidad de datos utilizados durante el entrenamiento.
+
+Los resultados gráficos se organizan en grillas de 2×2, permitiendo comparar las cuatro representaciones vectoriales.
+
+Además, los `Classification Reports` se almacenan en la carpeta `classification_reports/` del proyecto.
+
+3) Optimización de Hiperparámetros:
+
+Posteriormente, se incorpora un proceso de optimización mediante `GridSearchCV`, con el objetivo de encontrar las combinaciones de hiperparámetros que permiten obtener el mejor rendimiento durante la validación cruzada.
+
+Los mejores parámetros obtenidos se almacenan en un archivo JSON en la carpeta `optimization_results/` para conservar los resultados de la búsqueda y permitir su reutilización sin necesidad de ejecutar nuevamente todo el proceso de optimización.
+
+A partir de estos parámetros se definen nuevos clasificadores optimizados y se repite el procedimiento de entrenamiento y evaluación realizado con los modelos base.
+
+Se mantienen las dos configuraciones experimentales:
+
+* **Modelos optimizados sin escalado**
+* **Modelos optimizados con `StandardScaler`**
+
+De esta manera, es posible comparar el rendimiento de los clasificadores antes y después de la optimización
+
+4) Análisis exploratorio mediante PCA
+
+Se incorpora un análisis exploratorio de reducción de dimensionalidad mediante PCA (Principal Component Analysis), con el propósito de estudiar la posibilidad de visualizar las fronteras de decisión de los clasificadores mediante `DecisionBoundaryDisplay`.
+
+Sin embargo, debido a la alta dimensionalidad y dispersión de las representaciones vectoriales, la proyección sobre dos componentes principales conserva una proporción reducida de la varianza original.
+
+Por este motivo, las visualizaciones bidimensionales pueden perder información relevante de los datos y no representar adecuadamente las fronteras de decisión en el espacio original.
+
+Este análisis se conserva como una exploración metodológica y no forma parte de la evaluación principal de los clasificadores.
+
+5) Resultados generados
+
+El módulo produce resultados gráficos y reportes numéricos correspondientes a las dos etapas experimentales.
+
+Se generan ocho imágenes en total:
+
+- Modelos base: 4 imágenes
+- Modelos optimizado: 4 imágenes
+
+Las visualizaciones permiten comparar las cuatro representaciones vectoriales, considerando el balance de clases y las configuraciones de escalado y no escalado.
 
 
 ## Estado actual del proyecto
@@ -215,4 +290,5 @@ Además, se realiza una comparativa entre los modelos sin escalar y los modelos 
 * [x] Exportación de matrices de representación en formato disperso `.npz` cuando corresponde.
 * [x] Exportación de vocabularios en archivos CSV independientes.
 * [x] Entrenamiento de embeddings BoW, TF-IDF y FastText por medio de método SGD.
+* [x] Adición de carpetas `classification_reports` y `optimization_results` al proyecto.
 * [ ] Próximas etapas de procesamiento y análisis.

@@ -134,8 +134,9 @@ def main():
         nombres,
         titulo = "Curvas de aprendizaje con StandardScaler"
     )
+    """
 
-# ====== MODULO DE OPTIMIZACION DE MODELO ======
+# ====== MODULO DE OPTIMIZACION DE MODELO (Los resultados de optimizacion se encuentran en folder "optimization_results")======
 
     hiperparametros = [
     {
@@ -162,7 +163,7 @@ def main():
     clf_balanceado_opt = clone(clf_balanceado)
     clf_balanceado_opt.set_params(sgdclassifier__class_weight = "balanced")
 
-    resultados_opt_sin_scaler = ejecutar_etapa(
+    best_params_sb = ejecutar_etapa(
         "Optimizando modelos sin scaler",
         optimizar_sin_scaler,
         hiperparametros,
@@ -173,10 +174,7 @@ def main():
         cv
     )
 
-    best_params_sb = resultados_opt_sin_scaler["best_params"]
-    best_models_sb = resultados_opt_sin_scaler["best_models"]
-
-    resultados_opt_con_scaler = ejecutar_etapa(
+    best_params_b = ejecutar_etapa(
         "Optimizando modelos con scaler",
         optimizar_con_scaler,
         hiperparametros,
@@ -187,21 +185,203 @@ def main():
         cv
     )
 
-    best_params_b = resultados_opt_con_scaler["best_params"]
-    best_models_b = resultados_opt_con_scaler["best_models"]
-
     print("====== RESULTADOS DE OPTIMIZACION SIN ESCALADO ======")
     print(best_params_sb)
-    print("\n")
-    print(best_models_sb)
-
     print("\n")
 
     print("===== RESULTADOS DE OPTIMIZACION CON ESCALADO ======")
     print(best_params_b)
     print("\n")
-    print(best_models_b)
+    """
 
+    clf_bow = SGDClassifier(
+            alpha = 1e-05,
+            eta0 = 0.01,
+            learning_rate = "constant",
+            loss = "log_loss",
+            max_iter = 1000,
+            penalty = "elasticnet",
+            random_state = 42
+    )
+
+    clf_bigram = SGDClassifier(
+            alpha = 1e-05,
+            learning_rate = "optimal",
+            loss = "modified_huber",
+            max_iter = 1000,
+            penalty = "l2",
+            random_state = 42
+    )
+
+    clf_monogram = SGDClassifier(
+            alpha = 1e-05,
+            learning_rate = "optimal",
+            loss = "modified_huber",
+            max_iter = 1000,
+            penalty = "l2",
+            random_state = 42  
+    )
+
+    clf_ft = SGDClassifier(
+            alpha = 1e-05,
+            learning_rate = "optimal",
+            loss = "log_loss",
+            max_iter = 1000,
+            penalty = "l2",
+            random_state = 42     
+    )
+
+    clf_opt_sin_scaler = [clf_bow, clf_bigram, clf_monogram, clf_ft]
+
+    clf_bow_balanceado = make_pipeline(
+        StandardScaler(with_mean=False),
+        SGDClassifier(
+            alpha = 0.001,
+            learning_rate = "optimal",
+            loss = "log_loss",
+            max_iter = 1000,
+            penalty = "elasticnet",
+            class_weight = "balanced",
+            random_state = 42
+        )
+    )
+
+    clf_bigram_balanceado = make_pipeline(
+        StandardScaler(with_mean=False),
+        SGDClassifier(
+            alpha = 0.001,
+            eta0 = 0.01,
+            learning_rate = "adaptive",
+            loss = "log_loss",
+            max_iter = 1000,
+            penalty = "elasticnet",
+            class_weight = "balanced",
+            random_state = 42
+        )
+    )
+
+    clf_monogram_balanceado = make_pipeline(
+        StandardScaler(with_mean=False),
+        SGDClassifier(
+            alpha = 0.001,
+            learning_rate = "optimal",
+            loss = "log_loss",
+            max_iter = 1000,
+            penalty = "elasticnet",
+            class_weight = "balanced",
+            random_state = 42           
+        )
+    )
+
+    clf_ft_balanceado = make_pipeline(
+        StandardScaler(with_mean=False),
+        SGDClassifier(
+            alpha = 0.0001,
+            eta0 = 0.01,
+            learning_rate = "adaptive",
+            loss = "log_loss",
+            max_iter = 1000,
+            penalty = "elasticnet",
+            class_weight = "balanced",
+            random_state = 42            
+        )
+    )
+
+    clf_opt_con_scaler = [clf_bow_balanceado, clf_bigram_balanceado, clf_monogram_balanceado, clf_ft_balanceado]
+
+    resultados_1 = {}
+
+    for embedding, nombre, clf in zip(embeddings, nombres, clf_opt_sin_scaler):
+        resultado = modelo_sin_scaler(
+            [embedding],
+            clf,
+            [nombre],
+            y,
+            cv
+        )
+
+        resultados_1[nombre] = resultado
+
+
+    cr_opt_sb = [resultados_1[nombre]["cr_sb"][0] for nombre in nombres]
+
+    matrices_opt_sb = [resultados_1[nombre]["matrices"][0] for nombre in nombres]
+
+    ln_opt_sb = [resultados_1[nombre]["ln_sb"][0] for nombre in nombres]
+
+    df_optimizado_sb_sgd = pd.DataFrame({
+        "Embedding": nombres,
+        "Classification Report": cr_opt_sb
+    })
+
+    df_optimizado_sb_sgd.to_csv(
+        config.df_optimizado_sb_sgd,
+        index=False
+    )
+
+    resultados_2 = {}
+
+    for embedding, nombre, clf in zip(embeddings, nombres, clf_opt_con_scaler):
+        resultado = modelo_con_scaler(
+            [embedding],
+            clf,
+            [nombre],
+            y,
+            cv
+        )
+
+        resultados_2[nombre] = resultado
+
+
+    cr_opt_b = [resultados_2[nombre]["cr_b"][0] for nombre in nombres]
+
+    matrices_opt_b = [resultados_2[nombre]["matrices"][0] for nombre in nombres]
+
+    ln_opt_b = [resultados_2[nombre]["ln_b"][0] for nombre in nombres]
+
+    df_optimizado_b_sgd = pd.DataFrame({
+        "Embedding": nombres,
+        "Classification Report": cr_opt_b
+    })
+
+    df_optimizado_b_sgd.to_csv(
+        config.df_optimizado_b_sgd,
+        index=False
+    )
+
+    ejecutar_etapa(
+        "Graficando Confussion Matrices sin escalado (OPTIMIZADO)",
+        graficar_matrices_confusion,
+        matrices_opt_sb,
+        nombres,
+        labels,
+        titulo="SGD sin escalado"
+    )
+
+    ejecutar_etapa(
+        "Graficando Confussion Matrices con escalado (OPTIMIZADO)",
+        graficar_matrices_confusion,
+        matrices_opt_b,
+        nombres,
+        labels,
+        titulo="SGD con StandardScaler"
+    )
+
+    ejecutar_etapa(
+        "Graficando Learning Curves sin escalado (OPTIMIZADO)",
+        graficar_curvas_aprendizaje,
+        ln_opt_sb,
+        nombres,
+        titulo = "Curvas de aprendizaje sin escalado"
+    )
+
+    ejecutar_etapa(
+        "Graficando Learning Curves con escalado (OPTIMIZADO)",
+        graficar_curvas_aprendizaje,
+        ln_opt_b,
+        nombres,
+        titulo = "Curvas de aprendizaje con StandardScaler"
+    )
 
 if __name__ == "__main__":
     main()

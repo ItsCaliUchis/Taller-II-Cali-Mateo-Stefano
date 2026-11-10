@@ -1,0 +1,74 @@
+
+{
+  "modelo": "SGDClassifier",
+  "tiempos_ejecucion": {
+    "sin_escalado": "2 hs",
+    "con_escalado": "5 hs",
+    "total_modulo_optimizacion": "7 hs"
+  },
+  "resultados_optimizacion": {
+    "sin_escalado": {
+      "BOW": {
+        "sgdclassifier__alpha": 1e-05,
+        "sgdclassifier__eta0": 0.01,
+        "sgdclassifier__learning_rate": "constant",
+        "sgdclassifier__loss": "log_loss",
+        "sgdclassifier__max_iter": 1000,
+        "sgdclassifier__penalty": "elasticnet"
+      },
+      "TF-IDF Bigrama": {
+        "sgdclassifier__alpha": 1e-05,
+        "sgdclassifier__learning_rate": "optimal",
+        "sgdclassifier__loss": "modified_huber",
+        "sgdclassifier__max_iter": 1000,
+        "sgdclassifier__penalty": "l2"
+      },
+      "TF-IDF Monograma": {
+        "sgdclassifier__alpha": 1e-05,
+        "sgdclassifier__learning_rate": "optimal",
+        "sgdclassifier__loss": "modified_huber",
+        "sgdclassifier__max_iter": 1000,
+        "sgdclassifier__penalty": "l2"
+      },
+      "FastText": {
+        "sgdclassifier__alpha": 1e-05,
+        "sgdclassifier__learning_rate": "optimal",
+        "sgdclassifier__loss": "log_loss",
+        "sgdclassifier__max_iter": 1000,
+        "sgdclassifier__penalty": "l2"
+      }
+    },
+    "con_escalado": {
+      "BOW": {
+        "sgdclassifier__alpha": 0.001,
+        "sgdclassifier__learning_rate": "optimal",
+        "sgdclassifier__loss": "log_loss",
+        "sgdclassifier__max_iter": 1000,
+        "sgdclassifier__penalty": "elasticnet"
+      },
+      "TF-IDF Bigrama": {
+        "sgdclassifier__alpha": 0.001,
+        "sgdclassifier__eta0": 0.01,
+        "sgdclassifier__learning_rate": "adaptive",
+        "sgdclassifier__loss": "log_loss",
+        "sgdclassifier__max_iter": 1000,
+        "sgdclassifier__penalty": "elasticnet"
+      },
+      "TF-IDF Monograma": {
+        "sgdclassifier__alpha": 0.001,
+        "sgdclassifier__learning_rate": "optimal",
+        "sgdclassifier__loss": "log_loss",
+        "sgdclassifier__max_iter": 1000,
+        "sgdclassifier__penalty": "elasticnet"
+      },
+      "FastText": {
+        "sgdclassifier__alpha": 0.0001,
+        "sgdclassifier__eta0": 0.01,
+        "sgdclassifier__learning_rate": "adaptive",
+        "sgdclassifier__loss": "log_loss",
+        "sgdclassifier__max_iter": 1000,
+        "sgdclassifier__penalty": "elasticnet"
+      }
+    }
+  }
+}

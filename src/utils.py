@@ -330,7 +330,6 @@ def modelo_con_scaler(embeddings, clf, nombres, y, cv):
 def optimizar_sin_scaler(hiperparametros, embeddings, clf, nombres, y, cv):
 
     best_params_sb = {} # sin balancear
-    best_model_sb = {} # sin balancear
 
     for embedding, nombre in zip(embeddings, nombres):
 
@@ -357,18 +356,13 @@ def optimizar_sin_scaler(hiperparametros, embeddings, clf, nombres, y, cv):
 
         busqueda_sin_scaler.fit(X_train, y_train)
         best_params_sb[f"{nombre}"] = busqueda_sin_scaler.best_params_
-        best_model_sb[f"{nombre}"] = busqueda_sin_scaler.best_estimator_
 
-    return {
-        "best_params": best_params_sb,
-        "best_models": best_model_sb
-    }
+    return best_params_sb
 
 
 def optimizar_con_scaler(hiperparametros, embeddings, clf, nombres, y, cv):
 
     best_params_b = {}
-    best_model_b = {}
 
     for embedding, nombre in zip(embeddings, nombres):
 
@@ -384,7 +378,7 @@ def optimizar_con_scaler(hiperparametros, embeddings, clf, nombres, y, cv):
             random_state=102
         )
 
-        busqueda_sin_scaler = GridSearchCV(
+        busqueda_con_scaler = GridSearchCV(
             estimator = clone(clf),
             param_grid = hiperparametros,
             scoring = "f1_macro",
@@ -393,11 +387,7 @@ def optimizar_con_scaler(hiperparametros, embeddings, clf, nombres, y, cv):
             verbose=2
         )
 
-        busqueda_sin_scaler.fit(X_train, y_train)
-        best_params_b[f"{nombre}"] = busqueda_sin_scaler.best_params_
-        best_model_b[f"{nombre}"] = busqueda_sin_scaler.best_estimator_
+        busqueda_con_scaler.fit(X_train, y_train)
+        best_params_b[f"{nombre}"] = busqueda_con_scaler.best_params_
 
-    return {
-        "best_params": best_params_b,
-        "best_models": best_model_b
-    }
+    return best_params_b
