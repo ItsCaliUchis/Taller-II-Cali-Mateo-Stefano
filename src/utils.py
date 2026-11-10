@@ -10,9 +10,14 @@ import csv
 from pathlib import Path
 from scipy.sparse import load_npz
 import pandas as pd
+import numpy as np
 import subprocess
 
 import psutil
+
+from sklearn.model_selection import train_test_split, learning_curve, GridSearchCV
+from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.base import clone
 
 
 def ejecutar_etapa(nombre, funcion, *args, **kwargs):
@@ -161,16 +166,11 @@ def verificar_embeddings():
 
     if not Path(config.bow_vect).exists():
 
-        print(f'no existen los embeddings de bow en la ruta "{config.bow_vect}"')
-        opcion = input("¿Desea cargar los embeddings de bow? [s/n]: ").lower()
+        print(f'No existen los embeddings de bow en la ruta "{config.bow_vect}"')
+        print(f'Instalando...')
         print("\n")
-
-        if opcion == "s":
-            subprocess.run(["poetry", "run", "bow"], check=True)
-            X_bow = load_npz(config.bow_vect)          
-        else:
-            print("Se continua el proceso sin los embeddings bow")
-            print("\n")
+        subprocess.run(["poetry", "run", "bow"], check=True)
+        X_bow = load_npz(config.bow_vect)
 
     # IDF BIGRAM =============================
 
@@ -179,16 +179,11 @@ def verificar_embeddings():
 
     if not Path(config.idf_bigram).exists():
 
-        print(f'no existen los embeddings de bow en la ruta "{config.idf_bigram}"')
-        opcion = input("¿Desea cargar los embeddings de tf-idf bigrama? [s/n]: ").lower()
+        print(f'No existen los embeddings de bow en la ruta "{config.idf_bigram}"')
+        print(f'Instalando...')
         print("\n")
-
-        if opcion == "s":
-            subprocess.run(["poetry", "run", "idfbigram"], check=True)
-            X_bigram = load_npz(config.idf_bigram)
-        else:
-            print("Se continua el proceso sin los embeddings de tf-idf bigrama")
-            print("\n")
+        subprocess.run(["poetry", "run", "idfbigram"], check=True)
+        X_bigram = load_npz(config.idf_bigram)
 
     # IDF MONOGRAM ====================
 
@@ -197,16 +192,13 @@ def verificar_embeddings():
 
     if not Path(config.idf_monogram).exists():
 
-        print(f'no existen los embeddings de bow en la ruta "{config.idf_monogram}"')
-        opcion = input("¿Desea cargar los embeddings de tf-idf monogram? [s/n]: ").lower()
+        print(f'No existen los embeddings de bow en la ruta "{config.idf_monogram}"')
+        print(f'Instalando...')
         print("\n")
+        subprocess.run(["poetry", "run", "idfmonogram"], check=True)
+        X_monogram = load_npz(config.idf_monogram)
 
-        if opcion == "s":
-            subprocess.run(["poetry", "run", "idfmonogram"], check=True)
-            X_monogram = load_npz(config.idf_monogram)
-        else:
-            print("Se continua el proceso sin los embeddings de tf-idf monogram")
-            print("\n")
+    # FASTTEXT ========================
 
 
     if Path(config.fasttext_embeddings).exists():
@@ -214,15 +206,198 @@ def verificar_embeddings():
 
     if not Path(config.fasttext_embeddings).exists():
 
-        print(f'no existen los embeddings de fasttext en la ruta "{config.fasttext_embeddings}"')
-        opcion = input("¿Desea cargar los embeddings de fasttext? [s/n]: ").lower()
+        print(f'No existen los embeddings de fasttext en la ruta "{config.fasttext_embeddings}"')
+        print(f'Instalando...')
         print("\n")
-
-        if opcion == "s":
-            subprocess.run(["poetry", "run", "fasttext"], check=True)
-            X_ft = load_npz(config.fasttext_embeddings)
-        else:
-            print("Se continua el proceso sin los embeddings de fasttext")
-            print("\n")
+        subprocess.run(["poetry", "run", "fasttext"], check=True)
+        X_ft = load_npz(config.fasttext_embeddings)
 
     return X_bow, X_bigram, X_monogram, X_ft
+
+def entrenar(X_modelo,y,clf,cv):
+
+    clf = clone(clf)
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X_modelo,
+        y,
+        train_size=0.80,
+        shuffle=True,
+        stratify=y,
+        random_state=102
+    )
+
+    clf.fit(X_train, y_train)
+
+    y_pred = clf.predict(X_test)
+
+    cm = confusion_matrix(
+    y_test,
+    y_pred,
+    labels=["negative", "neutral", "positive"]
+    )
+
+    print(classification_report(y_test, y_pred))
+    print("\n")
+
+
+# CURVA DE APRENDIZAJE
+
+    train_sizes, train_scores, validation_scores = learning_curve(
+        clf,
+        X_train,
+        y_train,
+        train_sizes=np.linspace(0.1, 1.0, 5),
+        cv=cv,
+        scoring="f1_macro",
+        n_jobs=-1
+    )
+
+    objects = {
+        "cm": cm,
+        "lc_elements": [train_sizes, train_scores, validation_scores],
+        "classification_report": classification_report(y_test, y_pred)
+    }
+
+    return objects
+
+def modelo_sin_scaler(embeddings, clf, nombres, y, cv):
+
+    matrices_sb = [] # sb = sin balancear
+    ln_sb = [] # ln = learning curves
+    cr_sb = [] # classification reports sin balancear
+
+    for embedding, nombre in zip(embeddings,nombres):
+        print(f"\nEntrenando SGD sin escalado: {nombre}")
+        resultados = entrenar(
+            embedding,
+            y,
+            clf,
+            cv
+            )
+
+        cm = resultados["cm"]
+        train_sizes, train_scores, validation_scores = resultados["lc_elements"]
+        
+        matrices_sb.append(cm)
+        ln_sb.append((train_sizes, train_scores, validation_scores))
+        cr_sb.append(
+            f"=== {nombre} ====\n"
+            f"{resultados['classification_report']}"
+        )
+
+    variables = {
+        "matrices": matrices_sb,
+        "ln_sb": ln_sb,
+        "cr_sb": cr_sb
+    }
+
+    return variables
+
+def modelo_con_scaler(embeddings, clf, nombres, y, cv):
+    
+    matrices_b = [] # b = balanceado
+    ln_b = [] # ln = learning curves
+    cr_b = [] # classification reports balanceados
+
+    for embedding, nombre in zip(embeddings,nombres):
+        print(f"\nEntrenando SGD con escalado: {nombre}")
+        resultados = entrenar(
+            embedding,
+            y,
+            clf,
+            cv
+            )
+
+        cm = resultados["cm"]
+        train_sizes, train_scores, validation_scores = resultados["lc_elements"]
+        
+        matrices_b.append(cm)
+        ln_b.append((train_sizes, train_scores, validation_scores))
+        cr_b.append(
+            f"=== {nombre} ====\n"
+            f"{resultados['classification_report']}"
+        )
+
+    variables = {
+        "matrices": matrices_b,
+        "ln_b": ln_b,
+        "cr_b": cr_b
+    }
+
+    return variables
+
+def optimizar_sin_scaler(hiperparametros, embeddings, clf, nombres, y, cv):
+
+    best_params_sb = {} # sin balancear
+    best_model_sb = {} # sin balancear
+
+    for embedding, nombre in zip(embeddings, nombres):
+
+        print(f"Optimizando con {nombre} sin escalado")
+        print("\n")
+        
+        X_train, X_test, y_train, y_test = train_test_split(
+            embedding,
+            y,
+            train_size=0.80,
+            shuffle=True,
+            stratify=y,
+            random_state=102
+        )
+
+        busqueda_sin_scaler = GridSearchCV(
+            estimator = clone(clf),
+            param_grid = hiperparametros,
+            scoring = "f1_macro",
+            cv=cv,
+            n_jobs=-1,
+            verbose=2
+        )
+
+        busqueda_sin_scaler.fit(X_train, y_train)
+        best_params_sb[f"{nombre}"] = busqueda_sin_scaler.best_params_
+        best_model_sb[f"{nombre}"] = busqueda_sin_scaler.best_estimator_
+
+    return {
+        "best_params": best_params_sb,
+        "best_models": best_model_sb
+    }
+
+
+def optimizar_con_scaler(hiperparametros, embeddings, clf, nombres, y, cv):
+
+    best_params_b = {}
+    best_model_b = {}
+
+    for embedding, nombre in zip(embeddings, nombres):
+
+        print(f"Optimizando con {nombre} con escalado")
+        print("\n")
+        
+        X_train, X_test, y_train, y_test = train_test_split(
+            embedding,
+            y,
+            train_size=0.80,
+            shuffle=True,
+            stratify=y,
+            random_state=102
+        )
+
+        busqueda_sin_scaler = GridSearchCV(
+            estimator = clone(clf),
+            param_grid = hiperparametros,
+            scoring = "f1_macro",
+            cv=cv,
+            n_jobs=-1,
+            verbose=2
+        )
+
+        busqueda_sin_scaler.fit(X_train, y_train)
+        best_params_b[f"{nombre}"] = busqueda_sin_scaler.best_params_
+        best_model_b[f"{nombre}"] = busqueda_sin_scaler.best_estimator_
+
+    return {
+        "best_params": best_params_b,
+        "best_models": best_model_b
+    }

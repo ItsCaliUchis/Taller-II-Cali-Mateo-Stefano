@@ -24,6 +24,8 @@ elmo_load = DATA / "model_elmo.zip" # carga de elmo
 vocabulario_elmo = DATA / "elmo_vocab.csv"
 vocabulario_bert = DATA / "bert_vocab.csv"
 bert_vect = DATA / "bert_vect.npz"
+df_sb_sgd = DATA / "classification_report_sb_sgd.csv"
+df_b_sgd = DATA / "classification_report_b_sgd.csv"
 
 # Configuración de FastText
 MODELO_FASTTEXT = "fasttext-wiki-news-subwords-300"
