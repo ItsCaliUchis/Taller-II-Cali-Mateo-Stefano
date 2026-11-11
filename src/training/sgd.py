@@ -1,10 +1,11 @@
+import argparse
+import joblib
 import pandas as pd
 import config
 from utils import ejecutar_etapa, verificar_embeddings, modelo_con_scaler, modelo_sin_scaler, optimizar_sin_scaler, optimizar_con_scaler
 from pathlib import Path
-from .graphics import graficar_curvas_aprendizaje, graficar_matrices_confusion
 
-# ===== SCIKIT LEARN ==============
+# ===== BIBLIOTECA SCIKIT-LEARN ==============
 from sklearn.linear_model import SGDClassifier
 from sklearn.model_selection import StratifiedKFold, train_test_split, GridSearchCV
 from sklearn.preprocessing import StandardScaler
@@ -12,18 +13,41 @@ from sklearn.pipeline import make_pipeline
 from sklearn.base import clone
 
 def main():
+    parser = argparse.ArgumentParser(description="Entrena y evalua clasificadores SGD.")
+    parser.add_argument("--jobs", type=int, default=1, help="Procesos para cada curva de aprendizaje (default: 1).")
+    parser.add_argument("--full-evaluation", action="store_true", help="Usa 5 particiones y 5 tamanos por curva; el modo estandar usa 3 y 3.")
+    parser.add_argument("--no-plots", action="store_true", help="No abre graficos; util para ejecucion desatendida.")
+    args = parser.parse_args()
+    if args.jobs < 1:
+        parser.error("--jobs debe ser un entero positivo")
 
     if not Path(config.dataset_clean).exists():
-        print(f"El archivo ubicado en ruta '{config.dataset_clean}' no existe. Ejecutar comando 'extractor' y luego 'clean'")
-        return
+        print(f"No existe el archivo '{Path(config.dataset_clean).name}'. Ejecute 'extractor' y luego 'clean'.")
+        return 1
 
     df = ejecutar_etapa("Cargando dataset", pd.read_csv, config.dataset_clean)
     y = df["label"].map({0: "negative", 1: "negative", 2: "neutral", 3: "positive", 4: "positive"})
     if y.isna().any():
         raise ValueError("El dataset contiene etiquetas fuera del rango esperado 0..4.")
-    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+    cv_folds = 5 if args.full_evaluation else 3
+    curve_points = 5 if args.full_evaluation else 3
+    cv = StratifiedKFold(n_splits=cv_folds, shuffle=True, random_state=42)
 
     X_bow, X_bigram, X_monogram, X_ft = verificar_embeddings()
+
+    input_paths = [
+        config.dataset_clean,
+        config.bow_vect,
+        config.idf_bigram,
+        config.idf_monogram,
+        config.fasttext_embeddings,
+    ]
+    input_signature = [
+        (str(path), Path(path).stat().st_size, Path(path).stat().st_mtime_ns)
+        for path in input_paths
+    ]
+    run_id = joblib.hash((input_signature, cv_folds, curve_points))[:16]
+    checkpoint_dir = config.OPTIMIZATION_RESULTS / "sgd_checkpoints" / run_id
 
 # Dejamos pocos parametros estandar para despues ir optimizando con los modelos
     
@@ -44,7 +68,11 @@ def main():
         clf,
         nombres,
         y,
-        cv
+        cv,
+        checkpoint_dir=checkpoint_dir,
+        checkpoint_prefix="baseline_unscaled",
+        n_jobs=args.jobs,
+        curve_points=curve_points,
     )
 
     cr_sb = resultados_sin_scaler["cr_sb"] # classification report sin balancear (sin scaler)
@@ -67,7 +95,11 @@ def main():
         clf_balanceado,
         nombres,
         y,
-        cv
+        cv,
+        checkpoint_dir=checkpoint_dir,
+        checkpoint_prefix="baseline_scaled",
+        n_jobs=args.jobs,
+        curve_points=curve_points,
     )
 
     cr_b = resultados_con_scaler["cr_b"] # classification report con scaler (balanceado)
@@ -84,42 +116,45 @@ def main():
     df_b_sgd.to_csv(config.df_b_sgd, index=False)
 
 
-    ejecutar_etapa(
+    if not args.no_plots:
+        from .graphics import graficar_curvas_aprendizaje, graficar_matrices_confusion
+
+        ejecutar_etapa(
         "Graficando Confussion Matrices sin escalado",
         graficar_matrices_confusion,
         matrices_sb,
         nombres,
         labels,
         titulo="SGD sin escalado"
-    )
+        )
 
-    ejecutar_etapa(
+        ejecutar_etapa(
         "Graficando Confussion Matrices con escalado",
         graficar_matrices_confusion,
         matrices_b,
         nombres,
         labels,
         titulo="SGD con StandardScaler"
-    )
+        )
 
-    ejecutar_etapa(
+        ejecutar_etapa(
         "Graficando Learning Curves sin escalado",
         graficar_curvas_aprendizaje,
         ln_sb,
         nombres,
         titulo = "Curvas de aprendizaje sin escalado"
-    )
+        )
 
-    ejecutar_etapa(
+        ejecutar_etapa(
         "Graficando Learning Curves con escalado",
         graficar_curvas_aprendizaje,
         ln_b,
         nombres,
         titulo = "Curvas de aprendizaje con StandardScaler"
-    )
+        )
     """
 
-# ====== MODULO DE OPTIMIZACION DE MODELO (Los resultados de optimizacion se encuentran en folder "optimization_results")======
+# ====== MODULO DE OPTIMIZACION DE MODELO (Los resultados estan en la carpeta "optimization_results")======
 
     hiperparametros = [
     {
@@ -280,7 +315,11 @@ def main():
             clf,
             [nombre],
             y,
-            cv
+            cv,
+            checkpoint_dir=checkpoint_dir,
+            checkpoint_prefix="tuned_unscaled",
+            n_jobs=args.jobs,
+            curve_points=curve_points,
         )
 
         resultados_1[nombre] = resultado
@@ -310,7 +349,11 @@ def main():
             clf,
             [nombre],
             y,
-            cv
+            cv,
+            checkpoint_dir=checkpoint_dir,
+            checkpoint_prefix="tuned_scaled",
+            n_jobs=args.jobs,
+            curve_points=curve_points,
         )
 
         resultados_2[nombre] = resultado
@@ -332,39 +375,44 @@ def main():
         index=False
     )
 
-    ejecutar_etapa(
+    if not args.no_plots:
+        from .graphics import graficar_curvas_aprendizaje, graficar_matrices_confusion
+
+        ejecutar_etapa(
         "Graficando Confussion Matrices sin escalado (OPTIMIZADO)",
         graficar_matrices_confusion,
         matrices_opt_sb,
         nombres,
         labels,
         titulo="SGD sin escalado"
-    )
+        )
 
-    ejecutar_etapa(
+        ejecutar_etapa(
         "Graficando Confussion Matrices con escalado (OPTIMIZADO)",
         graficar_matrices_confusion,
         matrices_opt_b,
         nombres,
         labels,
         titulo="SGD con StandardScaler"
-    )
+        )
 
-    ejecutar_etapa(
+        ejecutar_etapa(
         "Graficando Learning Curves sin escalado (OPTIMIZADO)",
         graficar_curvas_aprendizaje,
         ln_opt_sb,
         nombres,
         titulo = "Curvas de aprendizaje sin escalado"
-    )
+        )
 
-    ejecutar_etapa(
+        ejecutar_etapa(
         "Graficando Learning Curves con escalado (OPTIMIZADO)",
         graficar_curvas_aprendizaje,
         ln_opt_b,
         nombres,
         titulo = "Curvas de aprendizaje con StandardScaler"
-    )
+        )
+
+    return 0
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

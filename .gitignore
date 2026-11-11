@@ -1,15 +1,23 @@
-# folders
+# carpetas
 __pycache__/
+/dist/
 
-# Generated datasets are local ETL artifacts.
+# Los datasets generados son artefactos locales del proceso ETL.
 /data/
 !/data/
 /data/*
 !/data/negaciones.json
 
-# Optimization results
+# Resultados de optimizacion
 !/optimization_results/
 !/optimization_results/*.json
+/optimization_results/pipeline_state.json
+/optimization_results/pipeline.stop
+/optimization_results/pipeline_logs/
+/optimization_results/sgd_checkpoints/
 
-# type file
+# Los informes de entrenamiento son resultados reproducibles locales.
+/classification_reports/*.csv
+
+# archivos compilados
 *.pyc

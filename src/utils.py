@@ -207,7 +207,7 @@ def verificar_embeddings():
 
     if not Path(config.fasttext_embeddings).exists():
 
-        print(f'No existen los embeddings de fasttext en la ruta "{config.fasttext_embeddings}"')
+        print(f'No existe el archivo de embeddings "{Path(config.fasttext_embeddings).name}"')
         print(f'Instalando...')
         print("\n")
         subprocess.run(["poetry", "run", "fasttext"], check=True)
@@ -215,7 +215,16 @@ def verificar_embeddings():
 
     return X_bow, X_bigram, X_monogram, X_ft
 
-def entrenar(X_modelo,y,clf,cv):
+def entrenar(X_modelo, y, clf, cv, *, checkpoint_path=None, n_jobs=1, curve_points=3):
+
+    if checkpoint_path is not None:
+        checkpoint_path = Path(checkpoint_path)
+        if checkpoint_path.exists():
+            print(f"Reutilizando checkpoint: {checkpoint_path.name}")
+            try:
+                return joblib.load(checkpoint_path)
+            except (EOFError, OSError, ValueError):
+                checkpoint_path.unlink(missing_ok=True)
 
     clf = clone(clf)
 
@@ -248,10 +257,10 @@ def entrenar(X_modelo,y,clf,cv):
         clf,
         X_train,
         y_train,
-        train_sizes=np.linspace(0.1, 1.0, 5),
+        train_sizes=np.linspace(0.1, 1.0, curve_points),
         cv=cv,
         scoring="f1_macro",
-        n_jobs=-1
+        n_jobs=n_jobs
     )
 
     objects = {
@@ -260,9 +269,26 @@ def entrenar(X_modelo,y,clf,cv):
         "classification_report": classification_report(y_test, y_pred)
     }
 
+    if checkpoint_path is not None:
+        checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
+        temporary_path = checkpoint_path.with_suffix(".tmp")
+        joblib.dump(objects, temporary_path)
+        temporary_path.replace(checkpoint_path)
+
     return objects
 
-def modelo_sin_scaler(embeddings, clf, nombres, y, cv):
+def _ruta_checkpoint(checkpoint_dir, checkpoint_prefix, nombre, clf):
+    if checkpoint_dir is None:
+        return None
+    nombre_archivo = re.sub(r"[^a-zA-Z0-9_-]+", "_", nombre).strip("_")
+    classifier_id = joblib.hash(clf.get_params(deep=True))[:12]
+    return Path(checkpoint_dir) / f"{checkpoint_prefix}_{nombre_archivo}_{classifier_id}.joblib"
+
+
+def modelo_sin_scaler(
+    embeddings, clf, nombres, y, cv, *, checkpoint_dir=None,
+    checkpoint_prefix="baseline_unscaled", n_jobs=1, curve_points=3
+):
 
     matrices_sb = [] # sb = sin balancear
     ln_sb = [] # ln = learning curves
@@ -274,7 +300,10 @@ def modelo_sin_scaler(embeddings, clf, nombres, y, cv):
             embedding,
             y,
             clf,
-            cv
+            cv,
+            checkpoint_path=_ruta_checkpoint(checkpoint_dir, checkpoint_prefix, nombre, clf),
+            n_jobs=n_jobs,
+            curve_points=curve_points,
             )
 
         cm = resultados["cm"]
@@ -295,7 +324,10 @@ def modelo_sin_scaler(embeddings, clf, nombres, y, cv):
 
     return variables
 
-def modelo_con_scaler(embeddings, clf, nombres, y, cv):
+def modelo_con_scaler(
+    embeddings, clf, nombres, y, cv, *, checkpoint_dir=None,
+    checkpoint_prefix="baseline_scaled", n_jobs=1, curve_points=3
+):
     
     matrices_b = [] # b = balanceado
     ln_b = [] # ln = learning curves
@@ -307,7 +339,10 @@ def modelo_con_scaler(embeddings, clf, nombres, y, cv):
             embedding,
             y,
             clf,
-            cv
+            cv,
+            checkpoint_path=_ruta_checkpoint(checkpoint_dir, checkpoint_prefix, nombre, clf),
+            n_jobs=n_jobs,
+            curve_points=curve_points,
             )
 
         cm = resultados["cm"]

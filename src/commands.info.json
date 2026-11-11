@@ -77,6 +77,13 @@
       "status": "active",
       "include": "training",
       "supports_help": false
+    },
+    "schedule": {
+      "entrypoint": "schedule:main",
+      "description": "Programa, supervisa y reanuda el pipeline de procesamiento",
+      "status": "active",
+      "include": "schedule.py",
+      "supports_help": true
     }
   }
 }

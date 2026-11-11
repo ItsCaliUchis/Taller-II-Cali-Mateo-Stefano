@@ -1,9 +1,30 @@
 from pathlib import Path
 import json
+import os
 
 # Mantener los datos junto al repositorio, sin depender del directorio
 # de trabajo actual. El proyecto se instala en modo editable.
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
+def _find_project_root():
+    module_path = Path(__file__).resolve()
+    for candidate in module_path.parents:
+        if (candidate / "pyproject.toml").is_file() and (candidate / "src").is_dir():
+            return candidate
+
+    configured_root = os.environ.get("TALLER_PROJECT_ROOT")
+    candidates = [Path(configured_root)] if configured_root else []
+    candidates.append(Path.cwd())
+    for candidate in candidates:
+        candidate = candidate.resolve()
+        if (candidate / "pyproject.toml").is_file() and (candidate / "src").is_dir():
+            return candidate
+
+    raise RuntimeError(
+        "No se pudo localizar la raiz del proyecto. Ejecuta desde el repositorio "
+        "o define TALLER_PROJECT_ROOT."
+    )
+
+
+PROJECT_ROOT = _find_project_root()
 DATA = PROJECT_ROOT / "data"
 CLASSIFICATION_REPORTS = PROJECT_ROOT / "classification_reports"
 OPTIMIZATION_RESULTS = PROJECT_ROOT / "optimization_results"
@@ -38,7 +59,7 @@ FASTTEXT_NROWS = None
 
 negaciones_path = DATA / "negaciones.json"
 
-# Rutas de Classification Reports
+# Rutas de informes de clasificacion
 df_sb_sgd = CLASSIFICATION_REPORTS / "classification_report_sb_sgd.csv" # sin optimizar (no balanceado)
 df_b_sgd = CLASSIFICATION_REPORTS / "classification_report_b_sgd.csv" # sin optimizar (balanceado)
 df_optimizado_sb_sgd = CLASSIFICATION_REPORTS / "classification_report_opt_sb_sgd.csv" # optimizado (no balanceado)
@@ -47,10 +68,16 @@ df_optimizado_b_sgd = CLASSIFICATION_REPORTS / "classification_report_opt_b_sgd.
 # Rutas de Resultados de Optimización de Modelos
 
 resultados_sgd = OPTIMIZATION_RESULTS / "resultados_sgd.json"
+PIPELINE_STATE = OPTIMIZATION_RESULTS / "pipeline_state.json"
+PIPELINE_LOGS = OPTIMIZATION_RESULTS / "pipeline_logs"
+SGD_CHECKPOINTS = OPTIMIZATION_RESULTS / "sgd_checkpoints"
+
+STOP_FILE = OPTIMIZATION_RESULTS / "pipeline.stop"
+
 
 
 def ruta_limitada(output_path, limit):
-    """Devuelve una ruta alternativa para una salida de procesamiento limitada."""
+    # Devuelve una ruta alternativa para una salida de procesamiento limitada
     output_path = Path(output_path)
     if limit is None:
         return output_path

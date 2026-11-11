@@ -36,6 +36,7 @@ fasttext = "preprocessing.fasttext:main"
 elmo = "preprocessing.elmo:main"
 bert = "preprocessing.bert:main"
 sgd = "training.sgd:main"
+schedule = "schedule:main"
 
 [tool.poetry]
 packages = [
@@ -46,6 +47,7 @@ packages = [
     {include = "preprocessing", from = "src"},
     {include = "training", from = "src"},
     {include = "utils.py", from = "src"},
+    {include = "schedule.py", from = "src"},
 ]
 
 
