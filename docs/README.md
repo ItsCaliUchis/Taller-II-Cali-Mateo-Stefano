@@ -12,6 +12,10 @@ Pipeline académico para análisis de sentimiento de reseñas de Amazon. Descarg
 4. Ejecutar los vectorizadores requeridos: `bow`, `idfMonogram`, `idfBigram`, `fasttext`, opcionalmente `bert` o `elmo`.
 5. `poetry run sgd` entrena y evalúa cuatro matrices: BoW, TF-IDF bigrama, TF-IDF monograma y FastText.
 
+Para ejecutar todo el flujo en segundo plano, usa `poetry run schedule start`; BERT y ELMo se procesan antes de SGD. Las salidas existentes se conservan, salvo que indiques `--overwrite`. Abre `poetry run schedule gui` para ver estados en vivo. Consulta [Optimización y ejecución programada](optimizacion.md).
+
+Para listar y descargar los artefactos publicados en Drive, usa `poetry run drive list`, `poetry run drive --download` o `poetry run drive gui`. Usa `poetry run drive manifest` para generar el manifiesto remoto y actualizar los SHA locales del inventario; consulta [Descargas desde Drive](drive_downloader.md) para su formato.
+
 Cada vectorizador acepta `--limit N` para procesar las primeras N filas del dataset limpio. Los artefactos limitados llevan `_limit_N` en su nombre (incluido el CSV de vocabulario) y no reemplazan las salidas completas. Ejemplo: `poetry run idfBigram --limit 500`.
 
 ## Documentos
@@ -20,7 +24,8 @@ Cada vectorizador acepta `--limit N` para procesar las primeras N filas del data
 - [Comandos CLI](comandos.md)
 - [Referencia de funciones y estado](referencia.md)
 - [Comportamientos, límites y pendientes](estado.md)
+- [Descargas desde Drive](drive_downloader.md)
 
 ## Estado en breve
 
-Las rutas se definen en `src/config.py` relativas al repositorio, no al directorio de ejecución. Los vectorizadores BERT y ELMo guardan matrices densas dentro de archivos NPZ; el resto guarda matrices dispersas SciPy. SGD actualmente consume únicamente matrices completas y BoW/TF-IDF/FastText. Evalúa modelos base y configuraciones con parámetros fijados manualmente; GridSearch está disponible en utilidades, pero no forma parte de la ejecución activa del comando `sgd`.
+Las rutas se resuelven contra la raíz del repositorio incluso al usar los comandos instalados por Poetry. Los artefactos de datos `.csv`, `.npz` y `.zip` están configurados para Git LFS; los detalles y las cuotas están en [Optimización](optimizacion.md). Los vectorizadores BERT y ELMo guardan matrices densas dentro de archivos NPZ; el resto guarda matrices dispersas SciPy. SGD consume únicamente matrices completas y BoW/TF-IDF/FastText. Evalúa modelos base y configuraciones con parámetros fijados manualmente; GridSearch está disponible en utilidades, pero no forma parte de la ejecución activa del comando `sgd`.

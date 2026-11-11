@@ -14,6 +14,8 @@ Todos se ejecutan con `poetry run`. El catálogo canónico está en `src/command
 | `bert` | `preprocessing.bert:main` | `--limit N`; vector CLS de `bert-base-uncased`. |
 | `elmo` | `preprocessing.elmo:main` | `--limit N`; vector promedio ELMo; pregunta antes de descargar pesos si no existen. |
 | `sgd` | `training.sgd:main` | Sin opciones; evalúa modelos base y con parámetros fijados manualmente, genera reportes CSV y abre gráficos interactivos. Requiere dataset limpio y los cuatro embeddings completos; genera automáticamente los faltantes. |
+| `schedule` | `schedule:main` | `start`, `run`, `status`, `stop`, `plan` y `gui`; ordena las etapas, conserva salidas existentes y requiere `--overwrite` para regenerarlas. |
+| `drive` | `drive_downloader.cli:main` | `list`, `--download`, `--overwrite`, `gui` y `manifest`; compara por SHA-256, actualiza SHA locales y genera `ListadoRemoto.json` desde `ListadoDescarga.json`. |
 | `list` | `list_tools:main` | `--all`, `--add`, `--modify NAME`, `--remove NAME`, `--sync`; `--include` solo con add/modify. |
 
 La validación de `--limit` exige entero positivo. Omitirlo procesa todas las filas y escribe el nombre estándar. En modo limitado, los nombres son por ejemplo `idf_bigram_limit_500.npz` y `idf_bigram_limit_500_vocab.csv`.
@@ -25,3 +27,5 @@ La validación de `--limit` exige entero positivo. Omitirlo procesa todas las fi
 - `bert` requiere acceso a los archivos del modelo de Hugging Face si aún no están en caché. BERT procesa secuencias con los valores predeterminados del tokenizador y puede fallar con reseñas que excedan el máximo admitido.
 - FastText descarga el modelo `fasttext-wiki-news-subwords-300` mediante Gensim si no está cacheado. ELMo descarga pesos mediante HTTP tras confirmación.
 - `list --add` y `list --modify` son flujos interactivos. El catálogo guarda descripción, estado, entrypoint, include y compatibilidad con ayuda.
+
+Para uso desatendido, inicia con `poetry run schedule start`. `schedule start --overwrite` regenera salidas y `schedule gui` abre el panel. Cada ejecución nueva limpia los logs y el estado JSON del scheduler, sin borrar los artefactos de datos. Consulta [Optimización](optimizacion.md).

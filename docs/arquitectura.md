@@ -35,7 +35,7 @@ API de reseñas → dataset_raw.csv → exploración/limpieza → dataset_clean.
 | `classification_reports/` | Reportes CSV de los modelos SGD |
 | `optimization_results/` | Ubicación configurada para resultados de optimización |
 
-Los archivos se escriben en `data/` salvo reportes e información de optimización. `config.py` crea esas carpetas al importarse y centraliza la derivación de nombres limitados en `ruta_limitada(path, limit)`. Cada ruta base (matriz y vocabulario) recibe el sufijo `_limit_N`, por lo que la convención queda alineada sin añadir variables de configuración para cada límite posible.
+Las rutas parten de la raíz del proyecto, detectada desde el módulo, `TALLER_PROJECT_ROOT` o el directorio actual del repositorio. Los archivos se escriben en `data/` salvo reportes e información de optimización. `config.py` crea esas carpetas al importarse y centraliza la derivación de nombres limitados en `ruta_limitada(path, limit)`. Cada ruta base (matriz y vocabulario) recibe el sufijo `_limit_N`, por lo que la convención queda alineada sin añadir variables de configuración para cada límite posible.
 
 ## Limpieza lingüística
 
