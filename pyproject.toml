@@ -37,6 +37,7 @@ elmo = "preprocessing.elmo:main"
 bert = "preprocessing.bert:main"
 sgd = "training.sgd:main"
 schedule = "schedule:main"
+drive = "drive_downloader.cli:main"
 
 [tool.poetry]
 packages = [
@@ -46,6 +47,7 @@ packages = [
     {include = "list_tools.py", from = "src"},
     {include = "preprocessing", from = "src"},
     {include = "training", from = "src"},
+    {include = "drive_downloader", from = "src"},
     {include = "utils.py", from = "src"},
     {include = "schedule.py", from = "src"},
 ]

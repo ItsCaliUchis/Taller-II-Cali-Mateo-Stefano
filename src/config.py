@@ -28,6 +28,10 @@ PROJECT_ROOT = _find_project_root()
 DATA = PROJECT_ROOT / "data"
 CLASSIFICATION_REPORTS = PROJECT_ROOT / "classification_reports"
 OPTIMIZATION_RESULTS = PROJECT_ROOT / "optimization_results"
+DRIVE_FOLDER_ID = "1wFGB-jh0yyq-igyCQPYAzm-hwppNYLyu"
+DRIVE_FOLDER_URL = f"https://drive.google.com/drive/folders/{DRIVE_FOLDER_ID}?usp=sharing"
+DRIVE_REMOTE_MANIFEST = DATA / "ListadoRemoto.json"
+DRIVE_DOWNLOAD_MANIFEST = DATA / "ListadoDescarga.json"
 
 DATA.mkdir(exist_ok=True)
 CLASSIFICATION_REPORTS.mkdir(exist_ok=True)

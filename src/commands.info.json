@@ -84,6 +84,13 @@
       "status": "active",
       "include": "schedule.py",
       "supports_help": true
+    },
+    "drive": {
+      "entrypoint": "drive_downloader.cli:main",
+      "description": "Genera manifiestos, compara y descarga archivos desde Drive",
+      "status": "active",
+      "include": "drive_downloader",
+      "supports_help": true
     }
   }
 }
