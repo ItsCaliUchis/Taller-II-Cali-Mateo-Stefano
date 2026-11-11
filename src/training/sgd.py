@@ -11,34 +11,17 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import make_pipeline
 from sklearn.base import clone
 
-if not Path(config.dataset_clean).exists:
-    print(f"La ruta para '{config.dataset_clean}' no existe")
-
-
-df = ejecutar_etapa(
-        "Cargando dataset",
-        pd.read_csv,
-        config.dataset_clean
-    )
-
-df["sentiment"] = df["label"].map({
-    0: "negative",
-    1: "negative",
-    2: "neutral",
-    3: "positive",
-    4: "positive"
-})
-
-y = df["sentiment"]
-
-cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
-
-
 def main():
 
     if not Path(config.dataset_clean).exists():
         print(f"El archivo ubicado en ruta '{config.dataset_clean}' no existe. Ejecutar comando 'extractor' y luego 'clean'")
         return
+
+    df = ejecutar_etapa("Cargando dataset", pd.read_csv, config.dataset_clean)
+    y = df["label"].map({0: "negative", 1: "negative", 2: "neutral", 3: "positive", 4: "positive"})
+    if y.isna().any():
+        raise ValueError("El dataset contiene etiquetas fuera del rango esperado 0..4.")
+    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
 
     X_bow, X_bigram, X_monogram, X_ft = verificar_embeddings()
 

@@ -6,7 +6,6 @@ from nltk.tokenize import word_tokenize as wt
 from scipy.sparse import save_npz
 from utils import extractor_reviews, ejecutar_etapa, obtener_limit, guardar_vocabulario, verificar_recursos_nltk
 from transformers import BertTokenizer, BertModel
-import tensorflow
 import torch
 
 def load_tokenizer():
@@ -114,6 +113,3 @@ def main():
 
     except (OSError, KeyError, ValueError) as e:
         print(f"No se pudieron cargar los embeddings: {e}")
-
-    if __name__ == "__main__":
-        main()

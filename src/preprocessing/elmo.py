@@ -1,22 +1,16 @@
-import os
-
-os.environ["TF_USE_LEGACY_KERAS"] = "1"
-
-
 from pathlib import Path
 import config 
 import numpy as np
 import pandas as pd
-from scipy.sparse import save_npz
 from nltk.tokenize import word_tokenize as wt
 import requests
 from utils import extractor_reviews, ejecutar_etapa, obtener_limit, guardar_vocabulario, verificar_recursos_nltk
 
-print("LA VECTORIZACION ELMO SE ESTA EJECUTANDO")
-
 pesos = "https://vectors.nlpl.eu/repository/20/194.zip"
 
 def load_elmo():
+    import os
+    os.environ["TF_USE_LEGACY_KERAS"] = "1"
     from simple_elmo import ElmoModel
     model = ElmoModel()
 
