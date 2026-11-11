@@ -55,11 +55,13 @@ def main():
 
     print(f"\nLa cardinalidad del vocabulario es de {len(vocabulario)}")
 
+    output_path = config.ruta_limitada(config.bert_vect, limit)
+    vocab_path = config.ruta_limitada(config.vocabulario_bert, limit)
     ejecutar_etapa(
         "Exportación del vocabulario CSV",
         guardar_vocabulario,
         vocabulario,
-        config.vocabulario_bert
+        vocab_path
     )
 
     tokenizer = ejecutar_etapa(
@@ -87,7 +89,7 @@ def main():
         embeddings = np.asarray(embeddings, dtype=np.float32)
 
         np.savez_compressed(
-            config.bert_vect,
+            output_path,
             embeddings=embeddings
         )
 
@@ -104,7 +106,7 @@ def main():
         return
 
     try:
-        with np.load(config.bert_vect) as data:
+        with np.load(output_path) as data:
             embeddings = data["embeddings"]
 
         print("Embeddings guardados correctamente.")

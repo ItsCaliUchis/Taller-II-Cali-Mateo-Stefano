@@ -48,6 +48,18 @@ df_optimizado_b_sgd = CLASSIFICATION_REPORTS / "classification_report_opt_b_sgd.
 
 resultados_sgd = OPTIMIZATION_RESULTS / "resultados_sgd.json"
 
+
+def ruta_limitada(output_path, limit):
+    """Devuelve una ruta alternativa para una salida de procesamiento limitada."""
+    output_path = Path(output_path)
+    if limit is None:
+        return output_path
+    if limit <= 0:
+        raise ValueError("limit debe ser un entero positivo")
+    return output_path.with_name(
+        f"{output_path.stem}_limit_{limit}{output_path.suffix}"
+    )
+
 def cargar_negaciones():
     if Path(negaciones_path).exists():
         with open(negaciones_path, "r", encoding="utf-8") as file:

@@ -98,7 +98,7 @@ def extractor_reviews(df):
 
 def obtener_limit():
     parser = argparse.ArgumentParser(
-        description="Generación de matrices TF-IDF de n-gramas."
+        description="Generación de representaciones vectoriales de reseñas."
     )
     parser.add_argument(
         "--limit",
@@ -115,14 +115,7 @@ def obtener_limit():
     return args.limit
 
 def obtener_ruta_salida(output_path, limit):
-    output_path = Path(output_path)
-
-    if limit is None:
-        return output_path
-
-    return output_path.with_name(
-        f"{output_path.stem}_limit_{limit}{output_path.suffix}"
-    )
+    return config.ruta_limitada(output_path, limit)
 
 
 def obtener_ruta_vocabulario(matrix_path):

@@ -33,14 +33,7 @@ def obtener_limit():
 
 
 def obtener_ruta_salida(output_path, limit):
-    output_path = Path(output_path)
-
-    if limit is None:
-        return output_path
-
-    return output_path.with_name(
-        f"{output_path.stem}_limit_{limit}{output_path.suffix}"
-    )
+    return config.ruta_limitada(output_path, limit)
 
 
 def main():
@@ -152,7 +145,7 @@ def main():
         "exportación del vocabulario CSV",
         guardar_vocabulario,
         vocabulario,
-        config.fasttext_vocab
+        config.ruta_limitada(config.fasttext_vocab, limit)
     )
 
     #exportacion de la matriz de embeddings por reseña

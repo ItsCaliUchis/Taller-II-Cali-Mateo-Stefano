@@ -32,22 +32,20 @@ def main():
 
     print(f"El vocabulario aprendido es: {vect.get_feature_names_out()} con tamaño {len(vect.get_feature_names_out())}")
 
+    output_path = config.ruta_limitada(config.bow_vect, limit)
+    vocab_path = config.ruta_limitada(config.bow_vocab, limit)
     ejecutar_etapa(
         "Exportando vocabulario",
         guardar_vocabulario,
         vocab,
-        config.bow_vocab
+        vocab_path
     )
 
     bow_columns = vect.get_feature_names_out()
 
     try:
-        save_npz(config.bow_vect, matrix)
+        save_npz(output_path, matrix)
 
     except Exception as e:
         print(f"Tipo: {type(e).__name__}")
         print(f"Mensaje: {e}")
-
-
-    if __name__ == '__main__':
-        main()

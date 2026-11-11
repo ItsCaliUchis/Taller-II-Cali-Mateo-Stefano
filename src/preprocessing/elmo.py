@@ -85,11 +85,13 @@ def main():
 
     print(f"\nLa cardinalidad del vocabulario es de {len(vocabulario)}")
 
+    output_path = config.ruta_limitada(config.elmo_vect, limit)
+    vocab_path = config.ruta_limitada(config.vocabulario_elmo, limit)
     ejecutar_etapa(
         "Exportación del vocabulario CSV",
         guardar_vocabulario,
         vocabulario,
-        config.vocabulario_elmo
+        vocab_path
     )
     
     print(
@@ -110,7 +112,7 @@ def main():
         embeddings = np.asarray(embeddings, dtype=np.float32)
 
         np.savez_compressed(
-        config.elmo_vect,
+        output_path,
         embeddings = embeddings
         )
 
@@ -127,7 +129,7 @@ def main():
         return
 
     try:
-        with np.load(config.elmo_vect) as data:
+        with np.load(output_path) as data:
             embeddings = data["embeddings"]
 
         print("Embeddings guardados correctamente.")
