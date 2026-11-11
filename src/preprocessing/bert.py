@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from nltk.tokenize import word_tokenize as wt
 from scipy.sparse import save_npz
-from utils import extractor_reviews, ejecutar_etapa, obtener_limit, guardar_vocabulario, verificar_recursos_nltk
+from utils import extractor_reviews, ejecutar_etapa, obtener_limit, guardar_vocabulario, verificar_recursos_nltk, _ascii_console_text
 from transformers import BertTokenizer, BertModel
 import torch
 
@@ -19,10 +19,10 @@ def load_bert():
 def main():
     if not Path(config.dataset_clean).exists():
         print(
-            f'no existe el dataset en la ruta "{config.dataset_clean}". '
+            f'no existe el dataset "{Path(config.dataset_clean).name}". '
             'ejecute primero el comando "extractor" y despues "clean".'
         )
-        return
+        return 1
     verificar_recursos_nltk()
 
     print("\nse esta cargando el dataset\n", flush=True)
@@ -37,7 +37,7 @@ def main():
     )
 
     reviews = ejecutar_etapa(   
-        "extraccion de reseñas",
+        "extraccion de resenas",
         extractor_reviews,
         df
     )
@@ -57,7 +57,7 @@ def main():
     output_path = config.ruta_limitada(config.bert_vect, limit)
     vocab_path = config.ruta_limitada(config.vocabulario_bert, limit)
     ejecutar_etapa(
-        "Exportación del vocabulario CSV",
+        "Exportacion del vocabulario CSV",
         guardar_vocabulario,
         vocabulario,
         vocab_path
@@ -95,14 +95,14 @@ def main():
         return embeddings
 
     vect = ejecutar_etapa(
-        "Generación de embeddings",
+        "Generacion de embeddings",
         embedding,
         inputs
     )
 
     if vect is None:
         print("No se pudieron generar los embeddings.")
-        return
+        return 1
 
     try:
         with np.load(output_path) as data:
@@ -112,4 +112,11 @@ def main():
         print("Dimensiones:", embeddings.shape)
 
     except (OSError, KeyError, ValueError) as e:
-        print(f"No se pudieron cargar los embeddings: {e}")
+        print(f"No se pudieron cargar los embeddings: {_ascii_console_text(e)}")
+        return 1
+
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

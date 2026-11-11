@@ -12,12 +12,20 @@ from scipy.sparse import load_npz
 import pandas as pd
 import numpy as np
 import subprocess
+import re
+import joblib
+import unicodedata
 
 import psutil
 
 from sklearn.model_selection import train_test_split, learning_curve, GridSearchCV
 from sklearn.metrics import classification_report, confusion_matrix
 from sklearn.base import clone
+
+
+def _ascii_console_text(value):
+    value = str(value).replace("ñ", "n").replace("Ñ", "N")
+    return unicodedata.normalize("NFKD", value).encode("ascii", "ignore").decode("ascii")
 
 
 def ejecutar_etapa(nombre, funcion, *args, **kwargs):
@@ -57,7 +65,7 @@ def ejecutar_etapa(nombre, funcion, *args, **kwargs):
 
         elapsed = perf_counter() - inicio
         print(
-            f"\r[{nombre}] Falló tras {elapsed:.2f}s.",
+            f"\r[{nombre}] Fallo tras {elapsed:.2f}s.",
             flush=True,
         )
         raise
@@ -98,13 +106,13 @@ def extractor_reviews(df):
 
 def obtener_limit():
     parser = argparse.ArgumentParser(
-        description="Generación de representaciones vectoriales de reseñas."
+        description="Generacion de representaciones vectoriales de resenas."
     )
     parser.add_argument(
         "--limit",
         type=int,
         default=None,
-        help="Cantidad máxima de reseñas a procesar. Por defecto, todas."
+        help="Cantidad maxima de resenas a procesar. Por defecto, todas."
     )
 
     args = parser.parse_args()
@@ -159,7 +167,7 @@ def verificar_embeddings():
 
     if not Path(config.bow_vect).exists():
 
-        print(f'No existen los embeddings de bow en la ruta "{config.bow_vect}"')
+        print(f'No existe el archivo de embeddings "{Path(config.bow_vect).name}"')
         print(f'Instalando...')
         print("\n")
         subprocess.run(["poetry", "run", "bow"], check=True)
@@ -172,7 +180,7 @@ def verificar_embeddings():
 
     if not Path(config.idf_bigram).exists():
 
-        print(f'No existen los embeddings de bow en la ruta "{config.idf_bigram}"')
+        print(f'No existe el archivo de embeddings "{Path(config.idf_bigram).name}"')
         print(f'Instalando...')
         print("\n")
         subprocess.run(["poetry", "run", "idfbigram"], check=True)
@@ -185,7 +193,7 @@ def verificar_embeddings():
 
     if not Path(config.idf_monogram).exists():
 
-        print(f'No existen los embeddings de bow en la ruta "{config.idf_monogram}"')
+        print(f'No existe el archivo de embeddings "{Path(config.idf_monogram).name}"')
         print(f'Instalando...')
         print("\n")
         subprocess.run(["poetry", "run", "idfmonogram"], check=True)

@@ -7,7 +7,7 @@ import numpy as np
 from gensim import downloader
 from nltk.tokenize import word_tokenize as wt
 from scipy.sparse import csr_matrix, save_npz
-from utils import extractor_reviews, ejecutar_etapa, guardar_vocabulario
+from utils import extractor_reviews, ejecutar_etapa, guardar_vocabulario, _ascii_console_text
 
 MODELO_FASTTEXT = config.MODELO_FASTTEXT
 RUTA_SALIDA = config.fasttext_embeddings
@@ -15,13 +15,13 @@ RUTA_SALIDA = config.fasttext_embeddings
 
 def obtener_limit():
     parser = argparse.ArgumentParser(
-        description="generacion de embeddings por reseña con FastText"
+        description="generacion de embeddings por resena con FastText"
     )
     parser.add_argument(
         "--limit",
         type=int,
         default=config.FASTTEXT_NROWS,
-        help="cantidad máxima de reseñas a procesar (todas)"
+        help="cantidad maxima de resenas a procesar (todas)"
     )
 
     args = parser.parse_args()
@@ -42,10 +42,10 @@ def main():
 
     if not Path(config.dataset_clean).exists():
         print(
-            f'no existe el dataset en la ruta "{config.dataset_clean}". '
+            f'no existe el dataset "{Path(config.dataset_clean).name}". '
             'ejecute primero los comandos "extractor" y "clean".'
         )
-        return
+        return 1
 
     print("\nse esta cargando el dataset.\n", flush=True)
 
@@ -57,19 +57,19 @@ def main():
     )
 
     print(
-        f"reseñas cargadas: {len(df)}",
+        f"resenas cargadas: {len(df)}",
         flush=True
     )
 
     reviews = ejecutar_etapa(
-        "extracción de reseñas",
+        "extraccion de resenas",
         extractor_reviews,
         df
     )
     
     if len(reviews) != len(df):
         raise ValueError(
-            "la cantidad de reseñas procesadas no coincide "
+            "la cantidad de resenas procesadas no coincide "
             "con la cantidad de filas "
         )
 
@@ -105,7 +105,7 @@ def main():
         try:
             vector = modelo.get_vector(palabra)
         except (KeyError, ValueError):
-            print(f"palabra no encontrada en el modelo: {palabra}")
+            print(f"palabra no encontrada en el modelo: {_ascii_console_text(palabra)}")
             vector = np.zeros(modelo.vector_size, dtype=np.float32)
 
         embeddings_palabras[palabra] = np.asarray(
@@ -142,7 +142,7 @@ def main():
 
     #exportacion del vocabulario
     ejecutar_etapa(
-        "exportación del vocabulario CSV",
+        "exportacion del vocabulario CSV",
         guardar_vocabulario,
         vocabulario,
         config.ruta_limitada(config.fasttext_vocab, limit)
@@ -157,10 +157,10 @@ def main():
     )
 
     print(
-        f"\nembeddings FastText guardados en: {ruta_salida}",
+        f"\nembeddings FastText guardados en: {ruta_salida.name}",
         flush=True
     )
-    
+    return 0
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

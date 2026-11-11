@@ -14,7 +14,7 @@ def exploratorio(df):
     print("Columnas del dataset:")
     print(df.columns.tolist()) # ver que columnas tiene el dataset; no hay distincion entre label y label-text
     print("\nPrimeras 10 filas:")
-    print(df.head(10))
+    print(df.head(10).to_string().encode("ascii", "replace").decode("ascii"))
     print("\nValores nulos por columna:")
     print(df.isnull().sum()) # no hay nulos tampoco
     print("===============================================\n")
@@ -23,14 +23,14 @@ def exploratorio(df):
     cumplen = df[df['id'].astype(str).str[:2] != 'en']['id']
     if not cumplen.empty: 
         for cumple in cumplen:
-            print(cumple)
+            print(str(cumple).encode("ascii", "replace").decode("ascii"))
     else:
         print("Todas las reviews son en ingles")
     verificar_labels(df)
 
 def main():
     argparse.ArgumentParser(
-        description='Realiza un análisis exploratorio del dataset raw.'
+        description='Realiza un analisis exploratorio del dataset raw.'
     ).parse_args()
 
     if Path(config.dataset_raw).exists():
@@ -38,5 +38,11 @@ def main():
         df = pd.read_csv(config.dataset_raw)
         print(f'\nSe ha cargado el dataset con {len(df)} registros, se procede a explorar el dataset\n')
         exploratorio(df)
+        return 0
     else:
-        print(f'No existe el dataset en la ruta "{config.dataset_raw}", ejecute primero el comando "extractor" para descargar el dataset y luego ejecute este comando para explorar el dataset')
+        print(f'No existe el dataset "{Path(config.dataset_raw).name}". Ejecute primero "extractor" para descargarlo.')
+        return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

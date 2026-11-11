@@ -16,7 +16,7 @@ def mostrar_progreso(actual, total, inicio):
     ancho = 40
     completado = int(ancho * porcentaje)
 
-    barra = "█" * completado + "░" * (ancho - completado)
+    barra = "#" * completado + "-" * (ancho - completado)
 
     velocidad = actual / (time.time() - inicio)
     restante = (total - actual) / velocidad if velocidad > 0 else 0
@@ -24,7 +24,7 @@ def mostrar_progreso(actual, total, inicio):
     sys.stdout.write(
         f"\r[{barra}] {porcentaje:6.2%} | "
         f"{actual:,}/{total:,} | "
-        f"{velocidad:.1f} reseñas/s | "
+        f"{velocidad:.1f} resenas/s | "
         f"ETA: {restante:.0f}s"
     )
     sys.stdout.flush()
@@ -38,24 +38,25 @@ def obtener_resenias(tamanio_miles=None, sobreescribir=False):
     if Path(config.dataset_raw).exists():
         if not sobreescribir:
             respuesta = input(
-                f'El dataset ya existe en "{config.dataset_raw}". '
-                "¿Querés sobreescribirlo? [s/N]: "
+                f'El dataset "{Path(config.dataset_raw).name}" ya existe. '
+                "Sobreescribir el archivo? [s/N]: "
             )
 
             if respuesta.lower() != "s":
                 print("\nDescarga cancelada. El Programa ha terminado")
-                return
+                return 1
             
     lista_resenias = []
     offset = 0
     inicio = time.time()
     total = None
     objetivo = None
+    descarga_exitosa = True
 
     while objetivo is None or len(lista_resenias) < objetivo:
         parametros = {"limit": PAGE_SIZE, "offset": offset}
 
-        print(f"\nSolicitando reseñas {offset:,} → {offset + PAGE_SIZE:,}...")
+        print(f"\nSolicitando resenas {offset:,} a {offset + PAGE_SIZE:,}...")
 
         response = requests.get(URL, params=parametros)
 
@@ -80,23 +81,29 @@ def obtener_resenias(tamanio_miles=None, sobreescribir=False):
 
         else:
             print(f"\nError HTTP: {response.status_code}")
+            descarga_exitosa = False
             break
 
     print("\n\nDescarga finalizada.")
-    print(f"Reseñas descargadas: {len(lista_resenias):,}")
+    print(f"Resenas descargadas: {len(lista_resenias):,}")
     print(f"Tiempo total: {time.time() - inicio:.1f} segundos")
+
+    if not descarga_exitosa or len(lista_resenias) < (objetivo or 0):
+        print("La descarga quedo incompleta; no se guardara el dataset.")
+        return 1
 
     dataset = pd.DataFrame(lista_resenias)
 
     dataset.to_csv(config.dataset_raw, index=False)
 
     print("\nDataset:")
-    print(dataset.describe())
+    print(dataset.describe().to_string().encode("ascii", "replace").decode("ascii"))
+    return 0
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Descarga las reseñas de Amazon y genera el dataset raw."
+        description="Descarga las resenas de Amazon y genera el dataset raw."
     )
 
     parser.add_argument(
@@ -104,8 +111,8 @@ def main():
         type=int,
         default=None,
         help=(
-            "Cantidad de miles de reseñas a descargar; por ejemplo, "
-            "--size 5 descarga hasta 5000. Cada petición solicita 1000. "
+            "Cantidad de miles de resenas a descargar; por ejemplo, "
+            "--size 5 descarga hasta 5000. Cada peticion solicita 1000. "
             "Si se omite, descarga todas las disponibles."
         ),
     )
@@ -114,7 +121,7 @@ def main():
         "--overwrite",
         "--no-confirm",
         action="store_true",
-        help="Sobreescribe el dataset existente sin pedir confirmación."
+        help="Sobreescribe el dataset existente sin pedir confirmacion."
     )
 
     args = parser.parse_args()
@@ -122,8 +129,8 @@ def main():
     if args.size is not None and args.size <= 0:
         parser.error("--size debe ser un entero positivo")
 
-    obtener_resenias(tamanio_miles=args.size, sobreescribir=args.overwrite)
+    return obtener_resenias(tamanio_miles=args.size, sobreescribir=args.overwrite)
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
