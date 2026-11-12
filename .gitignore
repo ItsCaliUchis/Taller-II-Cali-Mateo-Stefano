@@ -13,6 +13,7 @@ __pycache__/
 !/optimization_results/*.json
 /optimization_results/pipeline_state.json
 /optimization_results/pipeline.stop
+/optimization_results/*.temp
 /optimization_results/pipeline_logs/
 /optimization_results/sgd_checkpoints/
 

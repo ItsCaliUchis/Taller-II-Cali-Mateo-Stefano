@@ -45,7 +45,7 @@ def _clear_schedule_artifacts():
             run_id = datetime.now().strftime("run_%Y%m%d_%H%M%S") + f"_{os.getpid()}"
             log_dir = config.PIPELINE_LOGS / run_id
     log_dir.mkdir(parents=True, exist_ok=True)
-    for path in (config.PIPELINE_STATE, config.PIPELINE_STATE.with_suffix(".tmp"), STOP_FILE):
+    for path in (config.PIPELINE_STATE, config.PIPELINE_STATE.with_suffix(".tmp"), config.STOP_FILE):
         path.unlink(missing_ok=True)
     return log_dir
 
@@ -512,7 +512,7 @@ def _stop():
     if state.get("status") != "running" or not _pid_is_running(state.get("pid")):
         print("No hay un pipeline activo para detener.")
         return 1
-    STOP_FILE.write_text("stop\n", encoding="utf-8")
+    config.STOP_FILE.write_text("stop\n", encoding="utf-8")
     print("Se solicito detener el pipeline. La etapa actual terminara de forma controlada.")
     return 0
 
