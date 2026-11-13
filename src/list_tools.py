@@ -36,7 +36,9 @@ def sync_project(*, install=True):
     for name, entrypoint in desired_scripts.items():
         scripts[name] = entrypoint
 
-    includes = {"config.py"}
+    # utilidades compartidas importadas por varios comandos; no son entrypoints
+    # independientes, por lo que no aparecen en commands.info.json.
+    includes = {"config.py", "utils.py"}
     for info in catalog["commands"].values():
         include = info.get("include")
         if include:
@@ -157,7 +159,58 @@ def prompt_bool(label, current=None):
         print("Valor inválido. Ingrese true o false.")
 
 
-def validate_command(name, entrypoint, description, include, catalog, *, old_name=None):
+def prompt_json_list(label, current=None):
+    """Solicita una lista JSON, útil para argumentos con espacios o comas."""
+    default = json.dumps(current or [], ensure_ascii=False)
+    while True:
+        value = input(f"{label} (JSON) [{default}]: ").strip()
+        if not value:
+            return current or []
+        try:
+            parsed = json.loads(value)
+        except json.JSONDecodeError as error:
+            print(f"JSON inválido: {error}")
+            continue
+        if isinstance(parsed, list) and all(isinstance(item, str) for item in parsed):
+            return parsed
+        print("Ingrese una lista JSON cuyos elementos sean textos.")
+
+
+def prompt_schedule(current=None):
+    """Solicita la metadata que permite incluir un comando en un plan."""
+    current = current or {}
+    enabled = prompt_bool(
+        "¿Incluir este comando en los planes de schedule?",
+        bool(current),
+    )
+    if not enabled:
+        return None
+
+    print("Use rutas relativas a la raíz del proyecto para las salidas y nombres de comandos para dependencias.")
+    outputs = prompt_json_list("Salidas (p. ej. [\"data/dataset_clean.csv\"])", current.get("outputs", []))
+    depends_on = prompt_json_list("Depende de (nombres de comandos)", current.get("depends_on", []))
+    parallel_group = prompt_value(
+        "Grupo paralelo (vacío = ejecución secuencial)",
+        current.get("parallel_group", ""),
+    )
+    default_args = prompt_json_list(
+        "Argumentos por defecto (p. ej. [\"--download-model\"])",
+        current.get("default_args", []),
+    )
+    overwrite_arg = prompt_value(
+        "Argumento para permitir sobrescritura (vacío si no admite)",
+        current.get("overwrite_arg", "") or "",
+    )
+    return {
+        "outputs": outputs,
+        "depends_on": depends_on,
+        "parallel_group": parallel_group or None,
+        "default_args": default_args,
+        "overwrite_arg": overwrite_arg or None,
+    }
+
+
+def validate_command(name, entrypoint, description, include, catalog, *, old_name=None, schedule=None):
     if not COMMAND_NAME.fullmatch(name):
         raise ValueError("Nombre del comando invalido.")
     if not ENTRYPOINT.fullmatch(entrypoint):
@@ -170,6 +223,28 @@ def validate_command(name, entrypoint, description, include, catalog, *, old_nam
         raise ValueError(f"'{name}' ya existe en el catalogo.")
     if old_name is not None and name != old_name and name in catalog["commands"]:
         raise ValueError(f"'{name}' ya existe en el catalogo.")
+    if schedule is not None:
+        if not isinstance(schedule, dict):
+            raise ValueError("La configuración schedule debe ser un objeto o null.")
+        for field in ("outputs", "depends_on", "default_args"):
+            values = schedule.get(field, [])
+            if not isinstance(values, list) or not all(isinstance(value, str) for value in values):
+                raise ValueError(f"schedule.{field} debe ser una lista de textos.")
+        if not isinstance(schedule.get("parallel_group"), (str, type(None))):
+            raise ValueError("schedule.parallel_group debe ser un texto o null.")
+        if not isinstance(schedule.get("overwrite_arg"), (str, type(None))):
+            raise ValueError("schedule.overwrite_arg debe ser un texto o null.")
+        for output in schedule.get("outputs", []):
+            normalized = output.replace("\\", "/")
+            if normalized.startswith("/") or ".." in normalized.split("/"):
+                raise ValueError("Las salidas schedule deben ser rutas relativas dentro del proyecto.")
+        known_commands = set(catalog["commands"])
+        if old_name is not None:
+            known_commands.discard(old_name)
+            known_commands.add(name)
+        for dependency in schedule.get("depends_on", []):
+            if dependency not in known_commands or dependency == name:
+                raise ValueError(f"Dependencia schedule desconocida o circular: '{dependency}'.")
 
 
 def add_tool(include_arg=None):
@@ -185,7 +260,8 @@ def add_tool(include_arg=None):
             required=True,
         )
         supports_help = prompt_bool("¿Acepta --help?")
-        validate_command(name, entrypoint, description, include, catalog)
+        schedule = prompt_schedule()
+        validate_command(name, entrypoint, description, include, catalog, schedule=schedule)
 
     except ValueError as error:
         print(f"Error: {error}", file=sys.stderr)
@@ -196,6 +272,8 @@ def add_tool(include_arg=None):
         "description": description,
         "status": "active",
         "include": include.replace("\\", "/").strip(),
+        "supports_help": supports_help,
+        "schedule": schedule,
     }
 
     if save_and_sync(catalog) != 0:
@@ -246,6 +324,7 @@ def modify_tool(name, include_arg=None):
             "¿Acepta --help?",
             info.get("supports_help", False),
         )
+        schedule = prompt_schedule(info.get("schedule"))
 
         if status not in VALID_STATUSES:
             raise ValueError(
@@ -259,6 +338,7 @@ def modify_tool(name, include_arg=None):
             include,
             catalog,
             old_name=name,
+            schedule=schedule,
         )
 
     except ValueError as error:
@@ -267,6 +347,13 @@ def modify_tool(name, include_arg=None):
 
     if new_name != name:
         del catalog["commands"][name]
+        for command_info in catalog["commands"].values():
+            command_schedule = command_info.get("schedule")
+            if command_schedule:
+                command_schedule["depends_on"] = [
+                    new_name if dependency == name else dependency
+                    for dependency in command_schedule.get("depends_on", [])
+                ]
 
     catalog["commands"][new_name] = {
         "entrypoint": entrypoint,
@@ -274,6 +361,7 @@ def modify_tool(name, include_arg=None):
         "status": status,
         "include": include.replace("\\", "/").strip(),
         "supports_help": supports_help,
+        "schedule": schedule,
     }
 
     if save_and_sync(catalog) != 0:

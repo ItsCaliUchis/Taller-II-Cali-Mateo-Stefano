@@ -42,13 +42,13 @@ drive = "drive_downloader.cli:main"
 packages = [
     {include = "clean", from = "src"},
     {include = "config.py", from = "src"},
+    {include = "drive_downloader", from = "src"},
     {include = "extract", from = "src"},
     {include = "list_tools.py", from = "src"},
     {include = "preprocessing", from = "src"},
-    {include = "training", from = "src"},
-    {include = "drive_downloader", from = "src"},
-    {include = "utils.py", from = "src"},
     {include = "schedule.py", from = "src"},
+    {include = "training", from = "src"},
+    {include = "utils.py", from = "src"},
 ]
 
 

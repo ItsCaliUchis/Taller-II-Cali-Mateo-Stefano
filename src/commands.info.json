@@ -6,91 +6,215 @@
       "description": "Extrae datos de las fuentes configuradas.",
       "status": "active",
       "include": "extract",
-      "supports_help": true
+      "supports_help": true,
+      "schedule": {
+        "outputs": [
+          "data/dataset_raw.csv"
+        ],
+        "depends_on": [],
+        "parallel_group": null,
+        "default_args": [],
+        "overwrite_arg": "--overwrite"
+      }
     },
     "clean": {
       "entrypoint": "clean.cleanup:main",
       "description": "Limpia y prepara los datos para las etapas posteriores.",
       "status": "active",
       "include": "clean",
-      "supports_help": false
+      "supports_help": false,
+      "schedule": {
+        "outputs": [
+          "data/dataset_clean.csv"
+        ],
+        "depends_on": [
+          "extractor"
+        ],
+        "parallel_group": "prepare",
+        "default_args": []
+      }
     },
     "explore": {
       "entrypoint": "clean.exploratorio:main",
       "description": "Realiza el análisis exploratorio de los datos.",
       "status": "active",
       "include": "clean",
-      "supports_help": false
+      "supports_help": false,
+      "schedule": {
+        "outputs": [],
+        "depends_on": [
+          "extractor"
+        ],
+        "parallel_group": "prepare",
+        "default_args": []
+      }
     },
     "bow": {
       "entrypoint": "preprocessing.bow_embedding:main",
       "description": "Genera representaciones Bag of Words del texto.",
       "status": "active",
       "include": "preprocessing",
-      "supports_help": true
+      "supports_help": true,
+      "schedule": {
+        "outputs": [
+          "data/bow_vect.npz",
+          "data/bow_vocab.csv"
+        ],
+        "depends_on": [
+          "clean"
+        ],
+        "parallel_group": "embeddings",
+        "default_args": []
+      }
     },
     "list": {
       "entrypoint": "list_tools:main",
       "description": "Muestra y maneja los comandos disponibles en el proyecto.",
       "status": "active",
       "include": "list_tools.py",
-      "supports_help": false
+      "supports_help": false,
+      "schedule": null
     },
     "test": {
       "entrypoint": "testeee:test",
       "description": "testeo2",
       "status": "retired",
       "include": "extract",
-      "supports_help": false
+      "supports_help": false,
+      "schedule": null
     },
     "idfMonogram": {
       "entrypoint": "preprocessing.idf_ngram:monograma",
       "description": "Modulo de procesamiento de embeddings TF-IDF de tipo monograma",
       "status": "active",
       "include": "preprocessing",
-      "supports_help": true
+      "supports_help": true,
+      "schedule": {
+        "outputs": [
+          "data/idf_monogram.npz",
+          "data/idf_monogram_vocab.csv"
+        ],
+        "depends_on": [
+          "clean"
+        ],
+        "parallel_group": "embeddings",
+        "default_args": []
+      }
     },
     "idfBigram": {
       "entrypoint": "preprocessing.idf_ngram:bigrama",
       "description": "Modulo de procesamiento de embeddings TF-IDF de tipo bigrama",
       "status": "active",
       "include": "preprocessing",
-      "supports_help": true
+      "supports_help": true,
+      "schedule": {
+        "outputs": [
+          "data/idf_bigram.npz",
+          "data/idf_bigram_vocab.csv"
+        ],
+        "depends_on": [
+          "clean"
+        ],
+        "parallel_group": "embeddings",
+        "default_args": []
+      }
     },
     "fasttext": {
       "entrypoint": "preprocessing.fasttext:main",
       "description": "Modulo de procesamiento de embeddings fasttext",
       "status": "active",
       "include": "preprocessing",
-      "supports_help": true
+      "supports_help": true,
+      "schedule": {
+        "outputs": [
+          "data/fasttext_embeddings.npz",
+          "data/ft_vocab.csv"
+        ],
+        "depends_on": [
+          "clean"
+        ],
+        "parallel_group": "embeddings",
+        "default_args": []
+      }
     },
     "elmo": {
       "entrypoint": "preprocessing.elmo:main",
       "description": "Modulo de procesamiento de embeddings elmo",
       "status": "active",
       "include": "preprocessing",
-      "supports_help": true
+      "supports_help": true,
+      "schedule": {
+        "outputs": [
+          "data/elmo_vect.npz",
+          "data/elmo_vocab.csv"
+        ],
+        "depends_on": [
+          "clean"
+        ],
+        "parallel_group": "embeddings",
+        "default_args": [
+          "--download-model"
+        ]
+      }
+    },
+    "bert": {
+      "entrypoint": "preprocessing.bert:main",
+      "description": "Modulo de procesamiento de embeddings Bert",
+      "status": "active",
+      "include": "preprocessing",
+      "supports_help": true,
+      "schedule": {
+        "outputs": [
+          "data/bert_vect.npz",
+          "data/bert_vocab.csv"
+        ],
+        "depends_on": [
+          "clean"
+        ],
+        "parallel_group": "embeddings",
+        "default_args": []
+      }
     },
     "sgd": {
       "entrypoint": "training.sgd:main",
       "description": "Entrenamiento de embeddings por medio del método Stochastic Gradient Descent",
       "status": "active",
       "include": "training",
-      "supports_help": false
+      "supports_help": false,
+      "schedule": {
+        "outputs": [
+          "classification_reports/classification_report_sb_sgd.csv",
+          "classification_reports/classification_report_b_sgd.csv",
+          "classification_reports/classification_report_opt_sb_sgd.csv",
+          "classification_reports/classification_report_opt_b_sgd.csv"
+        ],
+        "depends_on": [
+          "bow",
+          "idfMonogram",
+          "idfBigram",
+          "fasttext"
+        ],
+        "parallel_group": null,
+        "default_args": [
+          "--no-plots"
+        ]
+      }
     },
     "schedule": {
       "entrypoint": "schedule:main",
       "description": "Programa, supervisa y reanuda el pipeline de procesamiento",
       "status": "active",
       "include": "schedule.py",
-      "supports_help": true
+      "supports_help": true,
+      "schedule": null
     },
     "drive": {
       "entrypoint": "drive_downloader.cli:main",
       "description": "Genera manifiestos, compara y descarga archivos desde Drive",
       "status": "active",
       "include": "drive_downloader",
-      "supports_help": true
+      "supports_help": true,
+      "schedule": null
     }
   }
 }
