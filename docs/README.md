@@ -12,7 +12,7 @@ Pipeline académico para análisis de sentimiento de reseñas de Amazon. Descarg
 4. Ejecutar los vectorizadores requeridos: `bow`, `idfMonogram`, `idfBigram`, `fasttext`, opcionalmente `bert` o `elmo`.
 5. `poetry run sgd` entrena y evalúa cuatro matrices: BoW, TF-IDF bigrama, TF-IDF monograma y FastText.
 
-Para ejecutar todo el flujo en segundo plano, usa `poetry run schedule start`; BERT y ELMo se procesan antes de SGD. Las salidas existentes se conservan, salvo que indiques `--overwrite`. Abre `poetry run schedule gui` para ver estados en vivo. Consulta [Optimización y ejecución programada](optimizacion.md).
+Para ejecutar el plan guardado en segundo plano, usa `poetry run schedule start`; `optimization_results/plan.json` determina selección, orden y argumentos. La GUI permite editar esa cola. `--workers N` paraleliza solo comandos consecutivos del mismo grupo; las salidas existentes se conservan, salvo que indiques `--overwrite`. Consulta [Optimización y ejecución programada](optimizacion.md).
 
 Para listar y descargar los artefactos publicados en Drive, usa `poetry run drive list`, `poetry run drive --download` o `poetry run drive gui`. Usa `poetry run drive manifest` para generar el manifiesto remoto y actualizar los SHA locales del inventario; consulta [Descargas desde Drive](drive_downloader.md) para su formato.
 
@@ -25,6 +25,7 @@ Cada vectorizador acepta `--limit N` para procesar las primeras N filas del data
 - [Referencia de funciones y estado](referencia.md)
 - [Comportamientos, límites y pendientes](estado.md)
 - [Descargas desde Drive](drive_downloader.md)
+- [Optimización y ejecución programada](optimizacion.md)
 
 ## Estado en breve
 

@@ -5,30 +5,53 @@
 `schedule` ejecuta etapas como procesos independientes, escribe logs separados y guarda el estado en `optimization_results/pipeline_state.json`.
 
 ```bash
-poetry run schedule start
+poetry run schedule plan
+poetry run schedule start --workers 2
+poetry run schedule run --overwrite
 poetry run schedule status
 poetry run schedule gui
 poetry run schedule stop
 ```
 
 - `start` lanza el coordinador en segundo plano en Windows y retorna el control a la terminal.
-- `run` ejecuta el mismo plan en primer plano.
+- `run` ejecuta el plan en primer plano; `start` y `run` aceptan `--overwrite` y `--plan RUTA`.
+- `optimization_results/plan.json` guarda localmente la selección, el orden y los argumentos; está excluido de Git. Si aún no existe, se crea desde los comandos activos que tienen metadata `schedule` en `src/commands.info.json`.
+- `plan` muestra la cola guardada. También puedes editar el JSON directamente; cada elemento usa `{"name": "bow", "args": ["--limit", "500"]}`.
+- La GUI permite marcar comandos, reordenarlos arrastrando, editar sus argumentos al hacer clic en la columna correspondiente y guardar el plan. Al iniciar desde la GUI, los cambios se guardan automáticamente.
 - `status` muestra estado, PID y progreso por etapa.
 - `stop` pide una parada controlada al terminar la operación activa. Una corrida nueva vuelve a validar los artefactos existentes.
-- `gui` abre una ventana Tkinter con estado actual, tabla en el mismo orden del plan, botones para iniciar/detener y un panel que sigue el log de la etapa activa.
+- `gui` muestra el plan, la ejecución actual y el log de las etapas activas; incluye controles de overwrite, evaluación SGD completa y cantidad de workers.
 - Al terminar o fallar una ejecución en Windows, `schedule` muestra una notificación en el área de notificación. `--no-notify` desactiva el aviso.
 - Cada `start` o `run` nuevo borra el estado JSON y los logs creados por `schedule` en `optimization_results/`, y empieza un historial limpio. Los datasets, matrices, checkpoints y otros resultados del pipeline se conservan.
 - Si Windows mantiene un log anterior abierto, el nuevo proceso escribe en una carpeta de logs exclusiva para no fallar al iniciar; se vuelve a intentar limpiar los logs anteriores en una corrida posterior. Al detener una etapa, el coordinador termina también los procesos descendientes de Poetry para liberar esos archivos.
-- La secuencia es extracción, exploración, limpieza, recursos NLTK, BoW, TF-IDF, FastText, BERT, ELMo y SGD. `--skip-contextual` omite BERT y ELMo.
-- Cada subcomando se inicia con su entrypoint instalado de Poetry (por ejemplo, `poetry run clean`). Antes de ejecutarlo, `schedule` revisa sus salidas: si todas existen y son válidas, omite la etapa; si existe solo una parte o hay archivos inválidos, la bloquea para evitar sobrescribirlos. `--overwrite` autoriza regenerar las salidas existentes. También valida los códigos de retorno, los archivos producidos y los punteros LFS sin contenido.
+- El orden y las etapas se toman del plan, no de una secuencia fija en `schedule.py`. `--skip-contextual` omite BERT y ELMo de esa ejecución.
+- Cada subcomando se inicia con su nombre de CLI registrado en Poetry. Antes de ejecutarlo, `schedule` revisa sus salidas: si todas existen y son válidas, omite la etapa; si existe solo una parte o hay archivos inválidos, la bloquea para evitar sobrescribirlos. `--overwrite` autoriza regenerar las salidas y transmite al comando el argumento de overwrite declarado en el catálogo. También valida códigos de retorno, archivos producidos y punteros LFS sin contenido.
 - Las marcas de tiempo del estado usan el horario de Buenos Aires, UTC−3.
 - Los mensajes de consola usan caracteres ASCII y muestran las rutas de log relativas a la raiz del repositorio.
-- `--workers 1` serializa los vectorizadores por defecto para reducir presión de memoria y CPU. Se puede subir el número de workers para usar un `ThreadPoolExecutor`, asumiendo mayor uso de recursos.
 
-Ejemplo de ejecución completa sin los modelos contextuales:
+### Grupos y workers
+
+`--workers N` define el máximo de comandos simultáneos dentro de un grupo consecutivo. Los comandos sin `parallel_group` se ejecutan solos. Cuando un comando tiene grupo, el scheduler puede ejecutar en paralelo los comandos inmediatamente posteriores que tengan el mismo grupo; una etapa de otro grupo corta ese lote. Por eso, los comandos deben aparecer contiguos en el plan para aprovechar workers juntos. Una dependencia entre comandos de un mismo lote crea una barrera antes de ejecutar el dependiente.
+
+Por ejemplo, con `--workers 2` y este plan:
+
+```text
+extractor (sin grupo)
+clean (prepare)
+elmo (embeddings)
+bert (embeddings)
+explore (prepare)
+bow (embeddings)
+```
+
+la ejecución sigue `extractor`, `clean`, `elmo + bert`, `explore`, `bow`. Aunque `clean` y `explore` compartan grupo, no son contiguos y no se juntan. El valor predeterminado es `--workers 1`.
+
+La metadata de cada comando vive en `commands.info.json`: `outputs` contiene rutas relativas al proyecto, `depends_on` nombres de comandos, `parallel_group` el grupo opcional, `default_args` los argumentos iniciales y `overwrite_arg` el argumento que permite regenerar salidas. `list --add` y `list --modify` solicitan estos datos.
+
+Ejemplo de ejecución sin los modelos contextuales:
 
 ```bash
-poetry run schedule start --skip-contextual
+poetry run schedule start --skip-contextual --workers 2
 ```
 
 Para regenerar todos los artefactos producidos por las etapas incluidas, solicita sobrescritura explícita:

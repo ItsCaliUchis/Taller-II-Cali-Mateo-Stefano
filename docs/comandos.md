@@ -14,7 +14,7 @@ Todos se ejecutan con `poetry run`. El catálogo canónico está en `src/command
 | `bert` | `preprocessing.bert:main` | `--limit N`; vector CLS de `bert-base-uncased`. |
 | `elmo` | `preprocessing.elmo:main` | `--limit N`; vector promedio ELMo; pregunta antes de descargar pesos si no existen. |
 | `sgd` | `training.sgd:main` | Sin opciones; evalúa modelos base y con parámetros fijados manualmente, genera reportes CSV y abre gráficos interactivos. Requiere dataset limpio y los cuatro embeddings completos; genera automáticamente los faltantes. |
-| `schedule` | `schedule:main` | `start`, `run`, `status`, `stop`, `plan` y `gui`; ordena las etapas, conserva salidas existentes y requiere `--overwrite` para regenerarlas. |
+| `schedule` | `schedule:main` | `start`/`run` ejecutan `optimization_results/plan.json`; admiten `--plan RUTA`, `--overwrite`, `--workers N`, `--sgd-jobs N`, `--full-evaluation` y `--skip-contextual`. `plan`, `status`, `stop` y `gui` administran la cola y la ejecución. |
 | `drive` | `drive_downloader.cli:main` | `list`, `--download`, `--overwrite`, `gui` y `manifest`; compara por SHA-256, actualiza SHA locales y genera `ListadoRemoto.json` desde `ListadoDescarga.json`. |
 | `list` | `list_tools:main` | `--all`, `--add`, `--modify NAME`, `--remove NAME`, `--sync`; `--include` solo con add/modify. |
 
@@ -26,6 +26,6 @@ La validación de `--limit` exige entero positivo. Omitirlo procesa todas las fi
 - Los embeddings limitados quedan separados de los completos. `sgd` actualmente no selecciona automáticamente matrices `*_limit_N`; espera que las matrices tengan la misma cantidad de filas que las etiquetas.
 - `bert` requiere acceso a los archivos del modelo de Hugging Face si aún no están en caché. BERT procesa secuencias con los valores predeterminados del tokenizador y puede fallar con reseñas que excedan el máximo admitido.
 - FastText descarga el modelo `fasttext-wiki-news-subwords-300` mediante Gensim si no está cacheado. ELMo descarga pesos mediante HTTP tras confirmación.
-- `list --add` y `list --modify` son flujos interactivos. El catálogo guarda descripción, estado, entrypoint, include y compatibilidad con ayuda.
+- `list --add` y `list --modify` son flujos interactivos. El catálogo guarda descripción, estado, entrypoint, include, compatibilidad con ayuda y metadata opcional de schedule: salidas, dependencias, grupo, argumentos por defecto y argumento de overwrite.
 
-Para uso desatendido, inicia con `poetry run schedule start`. `schedule start --overwrite` regenera salidas y `schedule gui` abre el panel. Cada ejecución nueva limpia los logs y el estado JSON del scheduler, sin borrar los artefactos de datos. Consulta [Optimización](optimizacion.md).
+Para uso desatendido, inicia con `poetry run schedule start`. El plan se guarda localmente en `optimization_results/plan.json`; la GUI permite editar selección, orden y argumentos. `--workers N` solo paraleliza comandos consecutivos con el mismo grupo. Cada ejecución nueva limpia logs y estado del scheduler, sin borrar artefactos de datos. Consulta [Optimización](optimizacion.md).

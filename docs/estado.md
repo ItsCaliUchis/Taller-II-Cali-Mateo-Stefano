@@ -11,7 +11,7 @@
 - Evaluación SGD base y con parámetros fijados manualmente en cuatro representaciones, reportes CSV, matrices de confusión y curvas de aprendizaje.
 - Administración del catálogo de comandos y sincronización de Poetry.
 - Downloader para la carpeta pública de Drive: crea el inventario local y compara artefactos usando `ListadoRemoto.json` y SHA-256.
-- Ejecución programada con validación de artefactos, omisión segura de salidas existentes, prioridad de BERT/ELMo antes de SGD, y checkpoints por representación para SGD.
+- Ejecución programada con plan editable, validación de artefactos, omisión segura de salidas existentes, grupos de concurrencia contiguos y checkpoints por representación para SGD.
 
 ## Parcial, experimental o desconectado
 
@@ -36,7 +36,7 @@ La importación de `training.sgd` ya no carga el dataset ni lanza trabajo. La im
 
 ## Estado de mantenimiento
 
-Cada `schedule start` o `schedule run` elimina primero los logs y el estado JSON anteriores del scheduler; conserva matrices, datasets, checkpoints y otros resultados. Omite una etapa si todas sus salidas están presentes y son válidas. Si solo algunas existen o alguna salida es inválida, bloquea la etapa para impedir que se sobrescriban datos accidentalmente; `--overwrite` permite regenerarlas. La hora registrada corresponde a Buenos Aires (UTC−3).
+Cada `schedule start` o `schedule run` elimina primero los logs y el estado JSON anteriores del scheduler; conserva el plan, matrices, datasets, checkpoints y otros resultados. El plan se guarda en `optimization_results/plan.json`; la GUI permite seleccionar comandos, ordenarlos y editar sus argumentos. La ejecución respeta dependencias y solo paraleliza comandos contiguos que comparten `parallel_group`, hasta el límite de `--workers`. Omite una etapa si todas sus salidas están presentes y son válidas. Si solo algunas existen o alguna salida es inválida, bloquea la etapa para impedir que se sobrescriban datos accidentalmente; `--overwrite` permite regenerarlas. La hora registrada corresponde a Buenos Aires (UTC−3).
 
 El downloader requiere `ListadoRemoto.json` en la carpeta pública. Primero crea `data/ListadoDescarga.json` desde el inventario visible y luego descarga y valida el manifiesto. Este debe incluir los IDs de Drive, tamaños y SHA-256. Los archivos se descargan a temporales, se verifican y solo entonces se mueven a `data/`; los faltantes/distintos se descargan por defecto y `--overwrite` fuerza todos. Nunca se eliminan archivos locales. La fecha de descarga es local y no se comparte en el manifiesto remoto.
 
@@ -46,6 +46,5 @@ El estado refleja el código revisado en esta versión y no una garantía de ren
 
 Lo proximo a realizar:
 
-- Mejorar la gui de `schedule.py`
 - Implementar `training/rna.py `
 - Implementar un uploader || generador de ListadoRemoto.json

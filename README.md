@@ -105,6 +105,10 @@ poetry run <comando> --help
 
 ---
 
+### Planificador configurable
+
+`schedule` ejecuta la cola guardada en `optimization_results/plan.json`. Desde `poetry run schedule gui` puedes elegir comandos, cambiar su orden y editar sus argumentos; también puedes ejecutar el plan desde CLI con `poetry run schedule run` o `poetry run schedule start`. `--overwrite` permite regenerar salidas y `--workers N` paraleliza únicamente comandos consecutivos que comparten un grupo declarado en el catálogo. Consulta [la guía del planificador](docs/optimizacion.md).
+
 ## Flujo de procesamiento
 
 El pipeline se organiza en tres etapas principales, que utilizan los archivos generados en las etapas anteriores como entrada para el procesamiento siguiente.
