@@ -73,6 +73,7 @@ df_optimizado_b_sgd = CLASSIFICATION_REPORTS / "classification_report_opt_b_sgd.
 
 resultados_sgd = OPTIMIZATION_RESULTS / "resultados_sgd.json"
 PIPELINE_STATE = OPTIMIZATION_RESULTS / "pipeline_state.json"
+PIPELINE_PLAN = OPTIMIZATION_RESULTS / "plan.json"
 PIPELINE_LOGS = OPTIMIZATION_RESULTS / "pipeline_logs"
 SGD_CHECKPOINTS = OPTIMIZATION_RESULTS / "sgd_checkpoints"
 

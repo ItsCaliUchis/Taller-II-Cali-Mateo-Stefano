@@ -11,6 +11,7 @@ __pycache__/
 # Resultados de optimizacion
 !/optimization_results/
 !/optimization_results/*.json
+/optimization_results/plan.json
 /optimization_results/pipeline_state.json
 /optimization_results/pipeline.stop
 /optimization_results/*.temp

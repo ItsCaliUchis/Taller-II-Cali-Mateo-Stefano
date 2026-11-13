@@ -131,89 +131,141 @@ def _poetry_command(command, *args):
     return [poetry, "run", command, *args]
 
 
-def _stages(sgd_jobs, full_evaluation, include_contextual, overwrite=False):
-    stages = [
-        {
-            "id": "extract",
-            "command": _poetry_command("extractor", *( ["--overwrite"] if overwrite else [] )),
-            "outputs": [config.dataset_raw],
-            "batch": "setup",
-        },
-        {
-            "id": "explore",
-            "command": _poetry_command("explore"),
-            "outputs": [],
-            "batch": "setup",
-        },
-        {
-            "id": "clean",
-            "command": _poetry_command("clean"),
-            "outputs": [config.dataset_clean],
-            "batch": "setup",
-        },
-        {
-            "id": "nltk_resources",
-            "command": None,
-            "outputs": [],
-            "batch": "setup",
-        },
-        {
-            "id": "bow",
-            "command": _poetry_command("bow"),
-            "outputs": [config.bow_vect, config.bow_vocab],
-            "batch": "sparse_embeddings",
-        },
-        {
-            "id": "idf_monogram",
-            "command": _poetry_command("idfMonogram"),
-            "outputs": [config.idf_monogram, config.DATA / "idf_monogram_vocab.csv"],
-            "batch": "sparse_embeddings",
-        },
-        {
-            "id": "idf_bigram",
-            "command": _poetry_command("idfBigram"),
-            "outputs": [config.idf_bigram, config.DATA / "idf_bigram_vocab.csv"],
-            "batch": "sparse_embeddings",
-        },
-        {
-            "id": "fasttext",
-            "command": _poetry_command("fasttext"),
-            "outputs": [config.fasttext_embeddings, config.fasttext_vocab],
-            "batch": "sparse_embeddings",
-        },
-    ]
-    if include_contextual:
-        stages.extend([
-            {
-                "id": "bert",
-                "command": _poetry_command("bert"),
-                "outputs": [config.bert_vect, config.vocabulario_bert],
-                "batch": "contextual_embeddings",
-            },
-            {
-                "id": "elmo",
-                "command": _poetry_command("elmo", "--download-model"),
-                "outputs": [config.elmo_vect, config.vocabulario_elmo],
-                "batch": "contextual_embeddings",
-            },
-        ])
-    stages.append({
-        "id": "sgd",
-        "command": _poetry_command(
-            "sgd",
-            "--jobs", str(sgd_jobs),
-            "--no-plots",
-            *( ["--full-evaluation"] if full_evaluation else [] ),
-        ),
-        "outputs": [
-            config.df_sb_sgd,
-            config.df_b_sgd,
-            config.df_optimizado_sb_sgd,
-            config.df_optimizado_b_sgd,
-        ],
-        "batch": "training",
-    })
+def _load_catalog():
+    try:
+        catalog = json.loads(config.JSON_COMMANDS.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise ValueError(f"No se pudo leer el catálogo de comandos: {error}") from error
+    return catalog.get("commands", {})
+
+
+def _default_plan():
+    commands = []
+    for name, info in _load_catalog().items():
+        metadata = info.get("schedule")
+        if info.get("status") == "active" and isinstance(metadata, dict):
+            commands.append({"name": name, "args": list(metadata.get("default_args", []))})
+    return {"version": 1, "commands": commands}
+
+
+def _save_plan(plan, path=None):
+    path = Path(path or config.PIPELINE_PLAN)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary_path = path.with_suffix(path.suffix + ".tmp")
+    temporary_path.write_text(json.dumps(plan, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    temporary_path.replace(path)
+
+
+def _load_plan(path=None):
+    path = Path(path or config.PIPELINE_PLAN)
+    if not path.exists():
+        plan = _default_plan()
+        _save_plan(plan, path)
+        return plan
+    try:
+        plan = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise ValueError(f"No se pudo leer el plan {path}: {error}") from error
+    if not isinstance(plan, dict) or plan.get("version") != 1 or not isinstance(plan.get("commands"), list):
+        raise ValueError("Formato inválido: el plan debe tener version 1 y una lista commands.")
+    catalog = _load_catalog()
+    seen = set()
+    for item in plan["commands"]:
+        if not isinstance(item, dict) or not isinstance(item.get("name"), str):
+            raise ValueError("Cada entrada del plan debe tener un campo name.")
+        name = item["name"]
+        if name in seen:
+            raise ValueError(f"El comando '{name}' está repetido en el plan.")
+        seen.add(name)
+        info = catalog.get(name)
+        if not info or info.get("status") != "active" or not isinstance(info.get("schedule"), dict):
+            raise ValueError(f"'{name}' no existe o no está habilitado para schedule en commands.info.json.")
+        if not isinstance(item.get("args", []), list) or not all(isinstance(arg, str) for arg in item.get("args", [])):
+            raise ValueError(f"Los argumentos de '{name}' deben ser una lista de textos.")
+    return plan
+
+
+def _stages(plan, sgd_jobs=1, full_evaluation=False, include_contextual=True, overwrite=False):
+    catalog = _load_catalog()
+    stages = []
+    selected = []
+    for item in plan["commands"]:
+        name = item["name"]
+        if not include_contextual and name in {"bert", "elmo"}:
+            continue
+        selected.append(name)
+    positions = {name: index for index, name in enumerate(selected)}
+    for name in selected:
+        info = catalog[name]
+        metadata = info["schedule"]
+        for dependency in metadata.get("depends_on", []):
+            if dependency in positions:
+                if positions[dependency] < positions[name]:
+                    continue
+                raise ValueError(f"'{dependency}' debe aparecer antes que '{name}' en plan.json.")
+            dependency_info = catalog.get(dependency, {})
+            dependency_schedule = dependency_info.get("schedule") or {}
+            dependency_outputs = [config.PROJECT_ROOT / path for path in dependency_schedule.get("outputs", [])]
+            if not dependency_outputs or not all(_file_is_valid(path) for path in dependency_outputs):
+                raise ValueError(
+                    f"'{name}' requiere '{dependency}' antes en plan.json, o que sus salidas ya existan y sean válidas."
+                )
+
+    item_by_name = {item["name"]: item for item in plan["commands"]}
+    for name in selected:
+        info = catalog[name]
+        metadata = info["schedule"]
+        args = list(item_by_name[name].get("args", metadata.get("default_args", [])))
+        overwrite_arg = metadata.get("overwrite_arg")
+        if overwrite_arg and not overwrite:
+            args = [arg for arg in args if arg != overwrite_arg]
+        if name == "sgd":
+            if "--jobs" not in args:
+                args.extend(["--jobs", str(sgd_jobs)])
+            if "--no-plots" not in args:
+                args.append("--no-plots")
+            if full_evaluation and "--full-evaluation" not in args:
+                args.append("--full-evaluation")
+        if overwrite and overwrite_arg and overwrite_arg not in args:
+            args.append(overwrite_arg)
+        stages.append({
+            "id": name,
+            "command": _poetry_command(name, *args),
+            "outputs": [config.PROJECT_ROOT / path for path in metadata.get("outputs", [])],
+            "depends_on": list(metadata.get("depends_on", [])),
+            "parallel_group": metadata.get("parallel_group"),
+        })
     return stages
+
+
+def _stage_batches(stages):
+    """Agrupa solo comandos contiguos con el mismo grupo, respetando dependencias."""
+    batches = []
+    index = 0
+    while index < len(stages):
+        first = stages[index]
+        group = first.get("parallel_group")
+        if not group:
+            batches.append([first])
+            index += 1
+            continue
+
+        batch = [first]
+        batch_ids = {first["id"]}
+        cursor = index + 1
+        while cursor < len(stages):
+            candidate = stages[cursor]
+            if candidate.get("parallel_group") != group:
+                break
+            # Si un comando depende de otro dentro del lote, inicia un lote nuevo.
+            if batch_ids.intersection(candidate.get("depends_on", [])):
+                break
+            batch.append(candidate)
+            batch_ids.add(candidate["id"])
+            cursor += 1
+        batches.append(batch)
+        index = cursor
+    return batches
 
 
 def _run_stage(stage, state, log_dir, overwrite=False):
@@ -253,7 +305,11 @@ def _run_stage(stage, state, log_dir, overwrite=False):
 
     log_path = log_dir / f"{stage_id}.log"
     with STATE_LOCK:
-        state["current_stage"] = stage_id
+        running_stages = state.setdefault("running_stages", [])
+        if stage_id not in running_stages:
+            running_stages.append(stage_id)
+        state["current_stages"] = list(running_stages)
+        state["current_stage"] = running_stages[0]
         state["stages"][stage_id] = {
             "status": "running", "started_at": _now(), "log": str(log_path),
         }
@@ -293,6 +349,11 @@ def _run_stage(stage, state, log_dir, overwrite=False):
                     _terminate_process_tree(process)
                     with STATE_LOCK:
                         state["stages"][stage_id].update({"status": "stopped", "finished_at": _now()})
+                        running_stages = state.get("running_stages", [])
+                        if stage_id in running_stages:
+                            running_stages.remove(stage_id)
+                        state["current_stages"] = list(running_stages)
+                        state["current_stage"] = running_stages[0] if running_stages else None
                         _write_state(state)
                     return False
                 time.sleep(1)
@@ -310,6 +371,11 @@ def _run_stage(stage, state, log_dir, overwrite=False):
             "return_code": return_code,
             "missing_outputs": missing_outputs,
         })
+        running_stages = state.get("running_stages", [])
+        if stage_id in running_stages:
+            running_stages.remove(stage_id)
+        state["current_stages"] = list(running_stages)
+        state["current_stage"] = running_stages[0] if running_stages else None
         _write_state(state)
     if return_code != 0:
         print(
@@ -321,12 +387,13 @@ def _run_stage(stage, state, log_dir, overwrite=False):
     return True
 
 
-def _run_pipeline(*, workers=1, sgd_jobs=1, full_evaluation=False, include_contextual=True, notify=True, overwrite=False, log_dir=None):
+def _run_pipeline(*, workers=1, sgd_jobs=1, full_evaluation=False, include_contextual=True, notify=True, overwrite=False, log_dir=None, plan_path=None):
     log_dir = Path(log_dir) if log_dir else config.PIPELINE_LOGS
     log_dir.mkdir(parents=True, exist_ok=True)
     config.STOP_FILE.unlink(missing_ok=True)
     state = _read_state()
-    stages = _stages(sgd_jobs, full_evaluation, include_contextual, overwrite)
+    plan = _load_plan(plan_path)
+    stages = _stages(plan, sgd_jobs, full_evaluation, include_contextual, overwrite)
     state.update({
         "status": "running",
         "pid": os.getpid(),
@@ -337,32 +404,24 @@ def _run_pipeline(*, workers=1, sgd_jobs=1, full_evaluation=False, include_conte
         "include_contextual": include_contextual,
         "notify": notify,
         "overwrite": overwrite,
+        "plan": plan,
+        "plan_path": str(Path(plan_path or config.PIPELINE_PLAN).resolve()),
         "stages": {stage["id"]: {"status": "pending"} for stage in stages},
     })
     _write_state(state)
-    batches = []
-    for stage in stages:
-        if not batches or batches[-1][0]["batch"] != stage["batch"]:
-            batches.append([stage])
-        else:
-            batches[-1].append(stage)
-
     success = True
     try:
-        for batch in batches:
-            if len(batch) == 1 or workers == 1:
-                for stage in batch:
-                    if not _run_stage(stage, state, log_dir, overwrite):
-                        success = False
-                        break
+        for batch in _stage_batches(stages):
+            if workers == 1 or len(batch) == 1:
+                outcomes = [_run_stage(batch[0], state, log_dir, overwrite)]
             else:
-                with ThreadPoolExecutor(max_workers=workers) as pool:
+                with ThreadPoolExecutor(max_workers=min(workers, len(batch))) as pool:
                     outcomes = list(pool.map(
                         lambda stage: _run_stage(stage, state, log_dir, overwrite),
                         batch,
                     ))
-                success = all(outcomes)
-            if not success:
+            if not all(outcomes):
+                success = False
                 break
     except BaseException as error:
         state["error"] = f"{type(error).__name__}: {error}"
@@ -374,6 +433,8 @@ def _run_pipeline(*, workers=1, sgd_jobs=1, full_evaluation=False, include_conte
         )
         state["finished_at"] = _now()
         state.pop("current_stage", None)
+        state.pop("current_stages", None)
+        state.pop("running_stages", None)
         _write_state(state)
         config.STOP_FILE.unlink(missing_ok=True)
         _notify_windows(state)
@@ -419,6 +480,9 @@ def _start_background(args):
         print(f"Ya hay un pipeline activo (PID {state['pid']}).")
         return 1
 
+    plan_path = Path(args.plan or config.PIPELINE_PLAN).resolve()
+    plan = _load_plan(plan_path)
+    _stages(plan, args.sgd_jobs, args.full_evaluation, not args.skip_contextual, args.overwrite)
     log_dir = _clear_schedule_artifacts()
     log_path = log_dir / "scheduler.log"
     command = _poetry_command(
@@ -426,6 +490,7 @@ def _start_background(args):
         "--log-dir", str(log_dir),
         "--workers", str(args.workers),
         "--sgd-jobs", str(args.sgd_jobs),
+        "--plan", str(plan_path),
     )
     if args.full_evaluation:
         command.append("--full-evaluation")
@@ -479,11 +544,17 @@ def _status():
     if status == "running" and not _pid_is_running(state.get("pid")):
         status = "worker_no_activo; estado guardado: running"
     elif status == "completed":
-        for stage in _stages(
-            state.get("sgd_jobs", 1),
-            state.get("full_evaluation", False),
-            state.get("include_contextual", True),
-        ):
+        try:
+            stages = _stages(
+                state.get("plan") or _load_plan(state.get("plan_path")),
+                state.get("sgd_jobs", 1),
+                state.get("full_evaluation", False),
+                state.get("include_contextual", True),
+                state.get("overwrite", False),
+            )
+        except (ValueError, OSError):
+            stages = []
+        for stage in stages:
             recorded = state.get("stages", {}).get(stage["id"], {})
             if recorded.get("status") == "done":
                 missing = [
@@ -497,7 +568,8 @@ def _status():
             status = "completed_inconsistent; outputs missing"
     print(f"Estado: {status}")
     print(f"PID: {state.get('pid', '-')}")
-    print(f"Etapa: {state.get('current_stage', '-')}")
+    current_stages = state.get("current_stages") or ([state["current_stage"]] if state.get("current_stage") else [])
+    print(f"Etapas activas: {', '.join(current_stages) if current_stages else '-'}")
     print(f"Inicio: {state.get('started_at', '-')}")
     print(f"Log: {_display_path(state.get('log', config.PIPELINE_LOGS / 'scheduler.log'))}")
     for stage_id, stage in state.get("stages", {}).items():
@@ -520,33 +592,131 @@ def _stop():
 def _gui():
     try:
         import tkinter as tk
-        from tkinter import messagebox, scrolledtext, ttk
+        from tkinter import messagebox, scrolledtext, simpledialog, ttk
     except ImportError as error:
         print(f"No se pudo cargar Tkinter: {_console_text(error)}", file=sys.stderr)
         return 1
 
     root = tk.Tk()
     root.title("Pipeline — estado de ejecución")
-    root.geometry("920x680")
-    root.minsize(720, 520)
+    root.geometry("1080x820")
+    root.minsize(820, 620)
 
     status_text = tk.StringVar(value="Consultando estado…")
     current_stage_text = tk.StringVar(value="Etapa activa: —")
-    include_contextual = tk.BooleanVar(value=True)
     overwrite = tk.BooleanVar(value=False)
+    full_evaluation = tk.BooleanVar(value=False)
+    workers = tk.IntVar(value=1)
+
+    try:
+        saved_plan = _load_plan()
+    except ValueError as error:
+        messagebox.showerror("Plan inválido", str(error), parent=root)
+        saved_plan = _default_plan()
+    plan_items = {item["name"]: {"name": item["name"], "args": list(item.get("args", []))} for item in saved_plan["commands"]}
+    selected_order = [item["name"] for item in saved_plan["commands"]]
+    catalog = _load_catalog()
+    available_names = [
+        name for name, info in catalog.items()
+        if info.get("status") == "active" and isinstance(info.get("schedule"), dict)
+    ]
 
     header = ttk.Frame(root, padding=12)
     header.pack(fill="x")
     ttk.Label(header, textvariable=status_text, font=("Segoe UI", 12, "bold")).pack(anchor="w")
     ttk.Label(header, textvariable=current_stage_text).pack(anchor="w", pady=(4, 0))
 
-    table = ttk.Treeview(root, columns=("stage", "status", "started", "finished"), show="headings", height=10)
-    table.heading("stage", text="Etapa")
+    plan_frame = ttk.LabelFrame(root, text="Plan de comandos — marca y arrastra para ordenar", padding=8)
+    plan_frame.pack(fill="both", expand=False, padx=12, pady=4)
+    plan_table = ttk.Treeview(
+        plan_frame, columns=("enabled", "order", "name", "args"),
+        show="headings", height=9, selectmode="browse",
+    )
+    for column, heading in (("enabled", "Usar"), ("order", "Orden"), ("name", "Comando"), ("args", "Argumentos (clic para editar)")):
+        plan_table.heading(column, text=heading)
+    plan_table.column("enabled", width=55, anchor="center", stretch=False)
+    plan_table.column("order", width=55, anchor="center", stretch=False)
+    plan_table.column("name", width=180, stretch=False)
+    plan_table.column("args", width=620)
+    plan_table.pack(fill="both", expand=True)
+    ttk.Label(plan_frame, text="Las dependencias deben estar antes en la cola, o sus salidas deben existir y ser válidas.").pack(anchor="w", pady=(5, 0))
+
+    def render_plan():
+        plan_table.delete(*plan_table.get_children())
+        ordered = [name for name in selected_order if name in plan_items]
+        ordered.extend(name for name in available_names if name not in ordered)
+        selected_positions = {name: index + 1 for index, name in enumerate(selected_order)}
+        for name in ordered:
+            item = plan_items.get(name, {"name": name, "args": list(catalog[name]["schedule"].get("default_args", []))})
+            plan_items[name] = item
+            enabled = name in selected_positions
+            plan_table.insert(
+                "", "end", iid=name,
+                values=("☑" if enabled else "☐", selected_positions.get(name, ""), name, json.dumps(item["args"], ensure_ascii=False)),
+            )
+
+    render_plan()
+
+    drag_state = {"item": None, "y": None}
+
+    def on_plan_press(event):
+        row = plan_table.identify_row(event.y)
+        drag_state.update(item=row or None, y=event.y)
+
+    def on_plan_release(event):
+        row = plan_table.identify_row(event.y)
+        column = plan_table.identify_column(event.x)
+        dragged = drag_state.get("item")
+        drag_state.update(item=None, y=None)
+        if not row or row not in plan_items:
+            return
+        if dragged == row and column == "#4":
+            item = plan_items[row]
+            initial = json.dumps(item["args"], ensure_ascii=False)
+            value = simpledialog.askstring(
+                "Argumentos del comando",
+                f"{row}: ingresa una lista JSON de argumentos (ej.: [\"--limit\", \"100\"])",
+                initialvalue=initial,
+                parent=root,
+            )
+            if value is not None:
+                try:
+                    parsed = json.loads(value)
+                    if not isinstance(parsed, list) or not all(isinstance(arg, str) for arg in parsed):
+                        raise ValueError("Los argumentos deben ser una lista JSON de textos.")
+                    item["args"] = parsed
+                except (json.JSONDecodeError, ValueError) as error:
+                    messagebox.showerror("Argumentos inválidos", str(error), parent=root)
+                render_plan()
+            return "break"
+        if dragged == row and column == "#1":
+            if row in selected_order:
+                selected_order.remove(row)
+            else:
+                selected_order.append(row)
+            render_plan()
+            return "break"
+        if dragged and dragged in selected_order and row in selected_order and dragged != row:
+            old_index = selected_order.index(dragged)
+            new_index = selected_order.index(row)
+            selected_order.pop(old_index)
+            selected_order.insert(new_index, dragged)
+            render_plan()
+        return "break"
+
+    plan_table.bind("<ButtonPress-1>", on_plan_press, add=True)
+    plan_table.bind("<ButtonRelease-1>", on_plan_release, add=True)
+
+    def current_plan():
+        return {"version": 1, "commands": [plan_items[name] for name in selected_order]}
+
+    table = ttk.Treeview(root, columns=("stage", "status", "started", "finished"), show="headings", height=7)
+    table.heading("stage", text="Comando")
     table.heading("status", text="Estado")
     table.heading("started", text="Inicio")
     table.heading("finished", text="Fin")
-    table.column("stage", width=150)
-    table.column("status", width=110, anchor="center")
+    table.column("stage", width=180)
+    table.column("status", width=120, anchor="center")
     table.column("started", width=180)
     table.column("finished", width=180)
     table.pack(fill="both", expand=True, padx=12, pady=4)
@@ -560,18 +730,32 @@ def _gui():
 
     controls = ttk.Frame(root, padding=12)
     controls.pack(fill="x")
-    ttk.Checkbutton(controls, text="Incluir BERT y ELMo", variable=include_contextual).pack(side="left")
-    ttk.Checkbutton(controls, text="Sobrescribir salidas", variable=overwrite).pack(side="left", padx=(10, 0))
+    ttk.Checkbutton(controls, text="Sobrescribir salidas", variable=overwrite).pack(side="left")
+    ttk.Checkbutton(controls, text="Evaluación SGD completa", variable=full_evaluation).pack(side="left", padx=(10, 0))
+    ttk.Label(controls, text="Workers por grupo:").pack(side="left", padx=(12, 4))
+    ttk.Spinbox(controls, from_=1, to=32, width=4, textvariable=workers).pack(side="left")
+
+    def save_plan():
+        try:
+            plan = current_plan()
+            _stages(plan)
+            _save_plan(plan)
+            status_text.set(f"Plan guardado en {_display_path(config.PIPELINE_PLAN)}")
+        except (ValueError, OSError) as error:
+            messagebox.showerror("No se pudo guardar el plan", str(error), parent=root)
+
+    ttk.Button(controls, text="Guardar plan", command=save_plan).pack(side="right", padx=(8, 0))
 
     def start_pipeline():
         nonlocal active_log_path, log_offset
         options = argparse.Namespace(
-            workers=1,
+            workers=workers.get(),
             sgd_jobs=1,
-            full_evaluation=False,
-            skip_contextual=not include_contextual.get(),
+            full_evaluation=full_evaluation.get(),
+            skip_contextual=False,
             no_notify=False,
             overwrite=overwrite.get(),
+            plan=str(config.PIPELINE_PLAN),
         )
         active_log_path = None
         log_offset = 0
@@ -579,8 +763,9 @@ def _gui():
         log_view.delete("1.0", "end")
         log_view.configure(state="disabled")
         try:
+            _save_plan(current_plan())
             _start_background(options)
-        except (OSError, RuntimeError) as error:
+        except (OSError, RuntimeError, ValueError) as error:
             messagebox.showerror("No se pudo iniciar el schedule", str(error), parent=root)
 
     ttk.Button(controls, text="Iniciar", command=start_pipeline).pack(side="right", padx=(8, 0))
@@ -591,24 +776,26 @@ def _gui():
         state = _read_state()
         current_status = state.get("status", "sin ejecuciones")
         if current_status == "completed":
-            for stage in _stages(
-                state.get("sgd_jobs", 1),
-                state.get("full_evaluation", False),
-                state.get("include_contextual", True),
-            ):
+            try:
+                stages = _stages(
+                    state.get("plan") or _load_plan(state.get("plan_path")),
+                    state.get("sgd_jobs", 1),
+                    state.get("full_evaluation", False),
+                    state.get("include_contextual", True),
+                    state.get("overwrite", False),
+                )
+            except (ValueError, OSError):
+                stages = []
+            for stage in stages:
                 recorded = state.get("stages", {}).get(stage["id"], {})
                 if recorded.get("status") == "done" and not all(_file_is_valid(path) for path in stage["outputs"]):
                     current_status = "completed_inconsistent; faltan salidas"
                     break
         status_text.set(f"Estado: {current_status} | PID: {state.get('pid', '—')}")
-        current_stage_text.set(f"Etapa activa: {state.get('current_stage', '—')}")
+        active_stages = state.get("current_stages") or ([state["current_stage"]] if state.get("current_stage") else [])
+        current_stage_text.set(f"Etapas activas: {', '.join(active_stages) if active_stages else '—'}")
         stage_records = state.get("stages", {})
-        stage_order = [stage["id"] for stage in _stages(
-            state.get("sgd_jobs", 1),
-            state.get("full_evaluation", False),
-            state.get("include_contextual", True),
-            state.get("overwrite", False),
-        )]
+        stage_order = [item["name"] for item in state.get("plan", {}).get("commands", [])]
         stage_order.extend(stage_id for stage_id in stage_records if stage_id not in stage_order)
         current_ids = set()
         for index, stage_id in enumerate(stage_order):
@@ -673,7 +860,7 @@ def main(argv=None):
 
     for action in ("start", "run"):
         command = commands.add_parser(action, help="Inicia la ejecucion completa" if action == "start" else "Ejecuta en primer plano")
-        command.add_argument("--workers", type=int, default=1, help="Vectorizadores concurrentes (default: 1).")
+        command.add_argument("--workers", type=int, default=1, help="Máximo de comandos simultáneos dentro de un grupo consecutivo (default: 1).")
         command.add_argument("--sgd-jobs", type=int, default=1, help="Procesos usados por curvas SGD (default: 1).")
         command.add_argument("--full-evaluation", action="store_true", help="SGD usa 5 folds y 5 puntos de curva; mas lento.")
         command.add_argument("--skip-contextual", action="store_true", help="Omite BERT y ELMo, que no son requeridos por SGD.")
@@ -682,6 +869,7 @@ def main(argv=None):
             "--overwrite", action="store_true",
             help="Regenera las salidas existentes; por defecto se conservan y se omiten.",
         )
+        command.add_argument("--plan", type=Path, default=config.PIPELINE_PLAN, help="Archivo JSON del plan (default: optimization_results/plan.json).")
 
     commands.add_parser("status", help="Muestra estado y etapas")
     commands.add_parser("stop", help="Solicita una detencion controlada")
@@ -695,14 +883,23 @@ def main(argv=None):
     worker.add_argument("--no-notify", action="store_true")
     worker.add_argument("--overwrite", action="store_true")
     worker.add_argument("--log-dir", type=Path)
+    worker.add_argument("--plan", type=Path, default=config.PIPELINE_PLAN)
     args = parser.parse_args(argv)
 
     if args.action in {"start", "run", "_worker"}:
         if args.workers < 1 or args.sgd_jobs < 1:
             parser.error("workers y sgd-jobs deben ser enteros positivos")
         if args.action == "start":
-            return _start_background(args)
+            try:
+                return _start_background(args)
+            except (OSError, ValueError) as error:
+                parser.error(str(error))
         if args.action == "run":
+            try:
+                plan = _load_plan(args.plan)
+                _stages(plan, args.sgd_jobs, args.full_evaluation, not args.skip_contextual, args.overwrite)
+            except (OSError, ValueError) as error:
+                parser.error(str(error))
             log_dir = _clear_schedule_artifacts()
         else:
             log_dir = args.log_dir
@@ -714,12 +911,18 @@ def main(argv=None):
             notify=not args.no_notify,
             overwrite=args.overwrite,
             log_dir=log_dir,
+            plan_path=args.plan,
         )
     if args.action == "status":
         return _status()
     if args.action == "plan":
-        for number, stage in enumerate(_stages(1, False, True), start=1):
-            print(f"{number}. {stage['id']}")
+        try:
+            plan = _load_plan()
+        except ValueError as error:
+            parser.error(str(error))
+        for number, item in enumerate(plan["commands"], start=1):
+            args_text = f" {json.dumps(item.get('args', []), ensure_ascii=False)}" if item.get("args") else ""
+            print(f"{number}. {item['name']}{args_text}")
         return 0
     if args.action == "gui":
         return _gui()
