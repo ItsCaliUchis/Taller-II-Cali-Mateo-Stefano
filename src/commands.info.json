@@ -200,6 +200,76 @@
         ]
       }
     },
+    "rna": {
+      "entrypoint": "training.rna:main",
+      "description": "Entrena MLPs de sentimiento sobre embeddings densos BERT y ELMo.",
+      "status": "active",
+      "include": "training",
+      "supports_help": true,
+      "schedule": {
+        "outputs": [],
+        "depends_on": [],
+        "parallel_group": null,
+        "default_args": [
+          "--embedding",
+          "both",
+          "--device",
+          "auto"
+        ],
+        "overwrite_arg": "--overwrite",
+        "outputs_by_argument": {
+          "--embedding": {
+            "bert": [
+              "classification_reports/rna_bert_report.csv",
+              "classification_reports/rna_bert_confusion.csv",
+              "classification_reports/rna_bert_confusion.png",
+              "classification_reports/rna_bert_history.csv",
+              "classification_reports/rna_bert_curves.png",
+              "optimization_results/rna_results/rna_bert_best_model.pt",
+              "optimization_results/rna_results/rna_bert_metadata.json",
+              "optimization_results/rna_results/rna_bert_complete.json"
+            ],
+            "elmo": [
+              "classification_reports/rna_elmo_report.csv",
+              "classification_reports/rna_elmo_confusion.csv",
+              "classification_reports/rna_elmo_confusion.png",
+              "classification_reports/rna_elmo_history.csv",
+              "classification_reports/rna_elmo_curves.png",
+              "optimization_results/rna_results/rna_elmo_best_model.pt",
+              "optimization_results/rna_results/rna_elmo_metadata.json",
+              "optimization_results/rna_results/rna_elmo_complete.json"
+            ],
+            "both": [
+              "classification_reports/rna_bert_report.csv",
+              "classification_reports/rna_bert_confusion.csv",
+              "classification_reports/rna_bert_confusion.png",
+              "classification_reports/rna_bert_history.csv",
+              "classification_reports/rna_bert_curves.png",
+              "optimization_results/rna_results/rna_bert_best_model.pt",
+              "optimization_results/rna_results/rna_bert_metadata.json",
+              "optimization_results/rna_results/rna_bert_complete.json",
+              "classification_reports/rna_elmo_report.csv",
+              "classification_reports/rna_elmo_confusion.csv",
+              "classification_reports/rna_elmo_history.csv",
+              "classification_reports/rna_elmo_confusion.png",
+              "classification_reports/rna_elmo_curves.png",
+              "optimization_results/rna_results/rna_elmo_best_model.pt",
+              "optimization_results/rna_results/rna_elmo_metadata.json",
+              "optimization_results/rna_results/rna_elmo_complete.json"
+            ]
+          }
+        },
+        "depends_on_by_argument": {
+          "--embedding": {
+            "bert": ["bert"],
+            "elmo": ["elmo"],
+            "both": ["bert", "elmo"]
+          }
+        },
+        "allow_partial_outputs": true,
+        "restart_arg": "--restart"
+      }
+    },
     "schedule": {
       "entrypoint": "schedule:main",
       "description": "Programa, supervisa y reanuda el pipeline de procesamiento",
