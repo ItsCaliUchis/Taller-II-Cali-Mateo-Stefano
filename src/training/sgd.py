@@ -11,6 +11,7 @@ from sklearn.model_selection import StratifiedKFold, train_test_split, GridSearc
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import make_pipeline
 from sklearn.base import clone
+from .data import load_sentiment_labels
 
 def main():
     parser = argparse.ArgumentParser(description="Entrena y evalua clasificadores SGD.")
@@ -25,10 +26,11 @@ def main():
         print(f"No existe el archivo '{Path(config.dataset_clean).name}'. Ejecute 'extractor' y luego 'clean'.")
         return 1
 
-    df = ejecutar_etapa("Cargando dataset", pd.read_csv, config.dataset_clean)
-    y = df["label"].map({0: "negative", 1: "negative", 2: "neutral", 3: "positive", 4: "positive"})
-    if y.isna().any():
-        raise ValueError("El dataset contiene etiquetas fuera del rango esperado 0..4.")
+    y = ejecutar_etapa(
+        "Cargando etiquetas",
+        load_sentiment_labels,
+        config.dataset_clean,
+    )
     cv_folds = 5 if args.full_evaluation else 3
     curve_points = 5 if args.full_evaluation else 3
     cv = StratifiedKFold(n_splits=cv_folds, shuffle=True, random_state=42)

@@ -195,17 +195,57 @@ def _stages(plan, sgd_jobs=1, full_evaluation=False, include_contextual=True, ov
             continue
         selected.append(name)
     positions = {name: index for index, name in enumerate(selected)}
+    def argument_value(args, option):
+        for index, value in enumerate(args):
+            if value.startswith(option + "="):
+                return value.split("=", 1)[1]
+            if value == option and index + 1 < len(args):
+                return args[index + 1]
+        return None
+
+    def selected_values(mapping, args, defaults=()):
+        result = list(defaults)
+        for option, choices in mapping.items():
+            value = argument_value(args, option)
+            if value in choices:
+                result.extend(choices[value])
+        return list(dict.fromkeys(result))
+
+    args_by_name = {
+        item["name"]: list(item.get("args", catalog[item["name"]]["schedule"].get("default_args", [])))
+        for item in plan["commands"]
+    }
+    resolved_dependencies = {}
+    inherited_limits = {}
+    for name in selected:
+        metadata = catalog[name]["schedule"]
+        resolved_dependencies[name] = selected_values(
+            metadata.get("depends_on_by_argument", {}), args_by_name[name], metadata.get("depends_on", [])
+        )
+        consumer_limit = argument_value(args_by_name[name], "--limit")
+        if consumer_limit is not None:
+            for dependency in resolved_dependencies[name]:
+                inherited_limits.setdefault(dependency, consumer_limit)
+
     for name in selected:
         info = catalog[name]
         metadata = info["schedule"]
-        for dependency in metadata.get("depends_on", []):
+        for dependency in resolved_dependencies[name]:
             if dependency in positions:
                 if positions[dependency] < positions[name]:
                     continue
                 raise ValueError(f"'{dependency}' debe aparecer antes que '{name}' en plan.json.")
             dependency_info = catalog.get(dependency, {})
             dependency_schedule = dependency_info.get("schedule") or {}
-            dependency_outputs = [config.PROJECT_ROOT / path for path in dependency_schedule.get("outputs", [])]
+            dependency_args = args_by_name.get(dependency, [])
+            dependency_limit = argument_value(dependency_args, "--limit") or inherited_limits.get(dependency)
+            dependency_output_names = selected_values(
+                dependency_schedule.get("outputs_by_argument", {}), dependency_args,
+                dependency_schedule.get("outputs", []),
+            )
+            dependency_outputs = [config.PROJECT_ROOT / path for path in dependency_output_names]
+            if dependency_limit is not None:
+                dependency_outputs = [config.ruta_limitada(path, int(dependency_limit)) for path in dependency_outputs]
             if not dependency_outputs or not all(_file_is_valid(path) for path in dependency_outputs):
                 raise ValueError(
                     f"'{name}' requiere '{dependency}' antes en plan.json, o que sus salidas ya existan y sean válidas."
@@ -216,6 +256,20 @@ def _stages(plan, sgd_jobs=1, full_evaluation=False, include_contextual=True, ov
         info = catalog[name]
         metadata = info["schedule"]
         args = list(item_by_name[name].get("args", metadata.get("default_args", [])))
+        if "--limit" not in args and name in inherited_limits:
+            args.extend(["--limit", inherited_limits[name]])
+        dependencies = resolved_dependencies[name]
+        output_names = selected_values(metadata.get("outputs_by_argument", {}), args, metadata.get("outputs", []))
+        limit_value = argument_value(args, "--limit")
+        try:
+            limit = int(limit_value) if limit_value is not None else None
+        except ValueError as error:
+            raise ValueError(f"--limit de '{name}' debe ser un entero positivo.") from error
+        if limit is not None and limit <= 0:
+            raise ValueError(f"--limit de '{name}' debe ser un entero positivo.")
+        output_paths = [config.PROJECT_ROOT / path for path in output_names]
+        if limit is not None:
+            output_paths = [config.ruta_limitada(path, limit) for path in output_paths]
         overwrite_arg = metadata.get("overwrite_arg")
         if overwrite_arg and not overwrite:
             args = [arg for arg in args if arg != overwrite_arg]
@@ -231,8 +285,10 @@ def _stages(plan, sgd_jobs=1, full_evaluation=False, include_contextual=True, ov
         stages.append({
             "id": name,
             "command": _poetry_command(name, *args),
-            "outputs": [config.PROJECT_ROOT / path for path in metadata.get("outputs", [])],
-            "depends_on": list(metadata.get("depends_on", [])),
+            "outputs": output_paths,
+            "depends_on": dependencies,
+            "allow_partial_outputs": bool(metadata.get("allow_partial_outputs", False)),
+            "restart_arg": metadata.get("restart_arg"),
             "parallel_group": metadata.get("parallel_group"),
         })
     return stages
@@ -271,7 +327,8 @@ def _stage_batches(stages):
 def _run_stage(stage, state, log_dir, overwrite=False):
     stage_id = stage["id"]
     existing_outputs = [path for path in stage["outputs"] if Path(path).exists()]
-    if not overwrite and existing_outputs:
+    restart = bool(stage.get("restart_arg") and stage["command"] and stage["restart_arg"] in stage["command"])
+    if not overwrite and not restart and existing_outputs:
         if all(_file_is_valid(path) for path in stage["outputs"]):
             print(f"[{stage_id}] salidas existentes verificadas; se omite.", flush=True)
             with STATE_LOCK:
@@ -281,19 +338,22 @@ def _run_stage(stage, state, log_dir, overwrite=False):
                 _write_state(state)
             return True
 
-        message = (
+        if stage.get("allow_partial_outputs"):
+            print(f"[{stage_id}] hay salidas parciales; se ejecutará para reanudar o completar.", flush=True)
+        else:
+            message = (
             f"[{stage_id}] hay salidas existentes o incompletas; no se modifican. "
             "Vuelve a ejecutar con --overwrite para regenerarlas."
-        )
-        print(_console_text(message), file=sys.stderr, flush=True)
-        with STATE_LOCK:
-            state["stages"][stage_id] = {
-                "status": "blocked", "finished_at": _now(),
-                "existing_outputs": [str(path) for path in existing_outputs],
-                "error": message,
-            }
-            _write_state(state)
-        return False
+            )
+            print(_console_text(message), file=sys.stderr, flush=True)
+            with STATE_LOCK:
+                state["stages"][stage_id] = {
+                    "status": "blocked", "finished_at": _now(),
+                    "existing_outputs": [str(path) for path in existing_outputs],
+                    "error": message,
+                }
+                _write_state(state)
+            return False
 
     if config.STOP_FILE.exists():
         with STATE_LOCK:

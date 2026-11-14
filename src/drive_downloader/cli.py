@@ -6,7 +6,7 @@ import config
 
 from .client import DriveAccessError
 from .gui import open_gui
-from .sync import DriveDownloader, ManifestError, generate_remote_manifest
+from .sync import DriveDownloader, ManifestError, create_rna_bundle, generate_remote_manifest
 
 
 def _console_text(value):
@@ -32,8 +32,8 @@ def main(argv=None):
         description="Lista y descarga artefactos desde la carpeta publica de Drive."
     )
     parser.add_argument(
-        "action", nargs="?", choices=("list", "gui", "manifest"), default="list",
-        help="Lista/compara, abre la GUI o genera ListadoRemoto.json desde data/.",
+        "action", nargs="?", choices=("list", "gui", "manifest", "bundle-rna"), default="list",
+        help="Lista/compara, abre la GUI, genera el manifiesto o empaqueta los resultados RNA.",
     )
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument(
@@ -47,10 +47,18 @@ def main(argv=None):
     parser.add_argument("--folder-url", default=config.DRIVE_FOLDER_URL)
     args = parser.parse_args(argv)
 
-    if args.action == "manifest":
+    if args.action in {"manifest", "bundle-rna"}:
         if args.download or args.overwrite:
-            parser.error("manifest genera el JSON y no admite --download ni --overwrite.")
+            parser.error(f"{args.action} no admite --download ni --overwrite.")
         try:
+            if args.action == "bundle-rna":
+                bundle = create_rna_bundle()
+                print(
+                    f"Generado {bundle.relative_to(config.PROJECT_ROOT)} "
+                    f"({bundle.stat().st_size} bytes)."
+                )
+                print("El paquete contiene los 16 modelos RNA finales y sus reportes; no incluye checkpoints ni Optuna.")
+                return 0
             payload = generate_remote_manifest()
         except (ManifestError, OSError, ValueError) as error:
             print(f"Error: {_console_text(error)}", file=sys.stderr)

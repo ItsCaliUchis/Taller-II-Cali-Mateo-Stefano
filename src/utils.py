@@ -105,23 +105,33 @@ def extractor_reviews(df):
 
     return vec_reviews
 
-def obtener_limit():
-    parser = argparse.ArgumentParser(
-        description="Generacion de representaciones vectoriales de resenas."
-    )
+def agregar_argumento_limit(parser):
+    """Agrega --limit a un parser CLI para reutilizar el mismo contrato."""
     parser.add_argument(
         "--limit",
         type=int,
         default=None,
-        help="Cantidad maxima de resenas a procesar. Por defecto, todas."
+        help="Cantidad maxima de resenas a procesar. Por defecto, todas.",
     )
+    return parser
 
-    args = parser.parse_args()
 
-    if args.limit is not None and args.limit <= 0:
+def obtener_limit(args=None, argv=None):
+    """Devuelve --limit; acepta argumentos parseados o conserva el parser heredado."""
+    if args is not None:
+        limit = getattr(args, "limit", args if isinstance(args, int) else None)
+        if limit is not None and limit <= 0:
+            raise ValueError("--limit debe ser un entero positivo.")
+        return limit
+
+    parser = argparse.ArgumentParser(
+        description="Generacion de representaciones vectoriales de resenas."
+    )
+    agregar_argumento_limit(parser)
+    parsed_args = parser.parse_args(argv)
+    if parsed_args.limit is not None and parsed_args.limit <= 0:
         parser.error("--limit debe ser un entero positivo.")
-
-    return args.limit
+    return parsed_args.limit
 
 def obtener_ruta_salida(output_path, limit):
     return config.ruta_limitada(output_path, limit)

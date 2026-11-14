@@ -176,6 +176,22 @@ def prompt_json_list(label, current=None):
         print("Ingrese una lista JSON cuyos elementos sean textos.")
 
 
+def prompt_json_object(label, current=None):
+    default = json.dumps(current or {}, ensure_ascii=False)
+    while True:
+        value = input(f"{label} (JSON) [{default}]: ").strip()
+        if not value:
+            return current or {}
+        try:
+            parsed = json.loads(value)
+        except json.JSONDecodeError as error:
+            print(f"JSON inválido: {error}")
+            continue
+        if isinstance(parsed, dict):
+            return parsed
+        print("Ingrese un objeto JSON.")
+
+
 def prompt_schedule(current=None):
     """Solicita la metadata que permite incluir un comando en un plan."""
     current = current or {}
@@ -201,12 +217,31 @@ def prompt_schedule(current=None):
         "Argumento para permitir sobrescritura (vacío si no admite)",
         current.get("overwrite_arg", "") or "",
     )
+    outputs_by_argument = prompt_json_object(
+        "Salidas condicionales por opción (objeto option -> valor -> rutas)",
+        current.get("outputs_by_argument", {}),
+    )
+    depends_on_by_argument = prompt_json_object(
+        "Dependencias condicionales por opción (objeto option -> valor -> comandos)",
+        current.get("depends_on_by_argument", {}),
+    )
+    allow_partial_outputs = prompt_bool(
+        "¿Permitir ejecutar con salidas parciales para reanudar?",
+        current.get("allow_partial_outputs", False),
+    )
+    restart_arg = prompt_value(
+        "Argumento que fuerza reinicio (vacío si no aplica)", current.get("restart_arg", "") or ""
+    )
     return {
         "outputs": outputs,
         "depends_on": depends_on,
         "parallel_group": parallel_group or None,
         "default_args": default_args,
         "overwrite_arg": overwrite_arg or None,
+        "outputs_by_argument": outputs_by_argument,
+        "depends_on_by_argument": depends_on_by_argument,
+        "allow_partial_outputs": allow_partial_outputs,
+        "restart_arg": restart_arg or None,
     }
 
 
@@ -234,10 +269,24 @@ def validate_command(name, entrypoint, description, include, catalog, *, old_nam
             raise ValueError("schedule.parallel_group debe ser un texto o null.")
         if not isinstance(schedule.get("overwrite_arg"), (str, type(None))):
             raise ValueError("schedule.overwrite_arg debe ser un texto o null.")
+        if not isinstance(schedule.get("restart_arg"), (str, type(None))):
+            raise ValueError("schedule.restart_arg debe ser un texto o null.")
+        if not isinstance(schedule.get("allow_partial_outputs", False), bool):
+            raise ValueError("schedule.allow_partial_outputs debe ser booleano.")
         for output in schedule.get("outputs", []):
             normalized = output.replace("\\", "/")
             if normalized.startswith("/") or ".." in normalized.split("/"):
                 raise ValueError("Las salidas schedule deben ser rutas relativas dentro del proyecto.")
+        for option, choices in schedule.get("outputs_by_argument", {}).items():
+            if not isinstance(option, str) or not isinstance(choices, dict):
+                raise ValueError("schedule.outputs_by_argument debe mapear opciones a objetos valor -> rutas.")
+            for paths in choices.values():
+                if not isinstance(paths, list) or not all(isinstance(path, str) for path in paths):
+                    raise ValueError("Cada salida condicional debe ser una lista de rutas.")
+                for output in paths:
+                    normalized = output.replace("\\", "/")
+                    if normalized.startswith("/") or ".." in normalized.split("/"):
+                        raise ValueError("Las salidas schedule deben ser rutas relativas dentro del proyecto.")
         known_commands = set(catalog["commands"])
         if old_name is not None:
             known_commands.discard(old_name)
@@ -245,6 +294,15 @@ def validate_command(name, entrypoint, description, include, catalog, *, old_nam
         for dependency in schedule.get("depends_on", []):
             if dependency not in known_commands or dependency == name:
                 raise ValueError(f"Dependencia schedule desconocida o circular: '{dependency}'.")
+        for option, choices in schedule.get("depends_on_by_argument", {}).items():
+            if not isinstance(option, str) or not isinstance(choices, dict):
+                raise ValueError("schedule.depends_on_by_argument debe mapear opciones a objetos valor -> comandos.")
+            for dependencies in choices.values():
+                if not isinstance(dependencies, list) or not all(isinstance(dep, str) for dep in dependencies):
+                    raise ValueError("Cada dependencia condicional debe ser una lista de comandos.")
+                for dependency in dependencies:
+                    if dependency not in known_commands or dependency == name:
+                        raise ValueError(f"Dependencia schedule desconocida o circular: '{dependency}'.")
 
 
 def add_tool(include_arg=None):
@@ -354,6 +412,9 @@ def modify_tool(name, include_arg=None):
                     new_name if dependency == name else dependency
                     for dependency in command_schedule.get("depends_on", [])
                 ]
+                for choices in command_schedule.get("depends_on_by_argument", {}).values():
+                    for value, dependencies in choices.items():
+                        choices[value] = [new_name if dependency == name else dependency for dependency in dependencies]
 
     catalog["commands"][new_name] = {
         "entrypoint": entrypoint,
