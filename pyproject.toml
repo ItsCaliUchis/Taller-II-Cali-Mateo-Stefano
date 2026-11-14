@@ -35,6 +35,7 @@ fasttext = "preprocessing.fasttext:main"
 elmo = "preprocessing.elmo:main"
 bert = "preprocessing.bert:main"
 sgd = "training.sgd:main"
+rna = "training.rna:main"
 schedule = "schedule:main"
 drive = "drive_downloader.cli:main"
 
