@@ -17,9 +17,13 @@ __pycache__/
 /optimization_results/*.temp
 /optimization_results/pipeline_logs/
 /optimization_results/sgd_checkpoints/
+/optimization_results/rna_checkpoints/
+/optimization_results/rna_results/
+/optimization_results/training_cache/
 
 # Los informes de entrenamiento son resultados reproducibles locales.
 /classification_reports/*.csv
+/classification_reports/rna_*.png
 
 # archivos compilados
 *.pyc

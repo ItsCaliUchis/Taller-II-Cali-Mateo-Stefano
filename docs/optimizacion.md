@@ -46,7 +46,7 @@ bow (embeddings)
 
 la ejecución sigue `extractor`, `clean`, `elmo + bert`, `explore`, `bow`. Aunque `clean` y `explore` compartan grupo, no son contiguos y no se juntan. El valor predeterminado es `--workers 1`.
 
-La metadata de cada comando vive en `commands.info.json`: `outputs` contiene rutas relativas al proyecto, `depends_on` nombres de comandos, `parallel_group` el grupo opcional, `default_args` los argumentos iniciales y `overwrite_arg` el argumento que permite regenerar salidas. `list --add` y `list --modify` solicitan estos datos.
+La metadata de cada comando vive en `commands.info.json`: `outputs` contiene rutas relativas al proyecto, `depends_on` nombres de comandos, `parallel_group` el grupo opcional, `default_args` los argumentos iniciales y `overwrite_arg` el argumento que permite regenerar salidas. `outputs_by_argument` y `depends_on_by_argument` permiten declarar artefactos y dependencias condicionales según una opción CLI; `allow_partial_outputs` habilita comandos con reanudación interna y `restart_arg` identifica un reinicio explícito. `list --add` y `list --modify` solicitan estos datos.
 
 Ejemplo de ejecución sin los modelos contextuales:
 
@@ -72,6 +72,23 @@ Al terminar cada representación, SGD guarda su reporte, matriz de confusión y 
 El comando programado añade `--no-plots`, ya que no hay una sesión gráfica que atender en segundo plano. Los reportes CSV se siguen generando. En una ejecución manual, SGD conserva las gráficas salvo que se indique `--no-plots`.
 
 Los comandos de las etapas devuelven código 0 solo al completar correctamente y código distinto de cero cuando falta una entrada, se cancela una operación o falla la generación. De este modo `schedule` puede detener la secuencia en la primera etapa fallida y mostrar el log correspondiente.
+
+## RNA sobre embeddings densos
+
+`rna` entrena un MLP por reseña para cada representación elegida; por defecto procesa BERT y ELMo. Separa train/valid/test de forma estratificada, selecciona el mejor modelo por F1 macro de validación y genera reportes de clasificación, matrices de confusión, historial de pérdidas/F1 y pesos del modelo.
+
+```bash
+poetry run rna --embedding both --device auto
+poetry run rna --embedding bert --limit 1000 --device cuda
+poetry run rna --overwrite
+poetry run rna --overwrite --restart
+```
+
+`--overwrite` vuelve a generar artefactos y continúa un checkpoint compatible. `--restart` descarta el checkpoint correspondiente a esa configuración y vuelve a entrenar. Se guardan checkpoints atómicos por época bajo `optimization_results/rna_checkpoints/`, separados por representación, entradas y parámetros. Los resultados y métricas van a `optimization_results/rna_results/` y `classification_reports/`. Al usar `--limit`, el dataset y las matrices BERT/ELMo deben compartir ese límite; schedule resuelve las rutas limitadas y verifica marcadores de salida por representación. Un entrenamiento interrumpido puede reanudarse con el mismo comando y configuración.
+
+Las cargas de etiquetas/matrices y el entrenamiento de cada representación usan `ejecutar_etapa`: la consola muestra tiempo transcurrido y RAM periódicamente, además del tiempo total al finalizar. También se informa duración por época con pérdida y F1. Cuando se lanza desde `schedule`, la salida queda en `optimization_results/pipeline_logs/rna.log`; el estado del scheduler guarda timestamps de inicio y finalización.
+
+La selección `--device auto` usa CUDA cuando la build de PyTorch y el driver la exponen; de lo contrario usa CPU. Para instalar soporte CUDA, usa el selector oficial de PyTorch y elige la build compatible con el sistema y driver: [Get Started Locally](https://pytorch.org/get-started/locally/). Esta instalación se administra aparte de Poetry; verifica con `poetry run python -c "import torch; print(torch.__version__, torch.cuda.is_available())"`. `--device cuda` falla con un mensaje explícito si CUDA no está disponible. La precisión mixta puede desactivarse con `--no-amp`.
 
 ## Estado local
 

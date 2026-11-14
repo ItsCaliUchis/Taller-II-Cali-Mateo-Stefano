@@ -14,6 +14,7 @@ Todos se ejecutan con `poetry run`. El catálogo canónico está en `src/command
 | `bert` | `preprocessing.bert:main` | `--limit N`; vector CLS de `bert-base-uncased`. |
 | `elmo` | `preprocessing.elmo:main` | `--limit N`; vector promedio ELMo; pregunta antes de descargar pesos si no existen. |
 | `sgd` | `training.sgd:main` | Sin opciones; evalúa modelos base y con parámetros fijados manualmente, genera reportes CSV y abre gráficos interactivos. Requiere dataset limpio y los cuatro embeddings completos; genera automáticamente los faltantes. |
+| `rna` | `training.rna:main` | MLP para clasificación de sentimiento sobre BERT y ELMo densos. `--embedding bert|elmo|both` (both por defecto), `--limit N`, `--device auto|cuda|cpu`, `--epochs`, `--batch-size`, `--overwrite` y `--restart`. Guarda checkpoints, métricas y gráficos. |
 | `schedule` | `schedule:main` | `start`/`run` ejecutan `optimization_results/plan.json`; admiten `--plan RUTA`, `--overwrite`, `--workers N`, `--sgd-jobs N`, `--full-evaluation` y `--skip-contextual`. `plan`, `status`, `stop` y `gui` administran la cola y la ejecución. |
 | `drive` | `drive_downloader.cli:main` | `list`, `--download`, `--overwrite`, `gui` y `manifest`; compara por SHA-256, actualiza SHA locales y genera `ListadoRemoto.json` desde `ListadoDescarga.json`. |
 | `list` | `list_tools:main` | `--all`, `--add`, `--modify NAME`, `--remove NAME`, `--sync`; `--include` solo con add/modify. |
@@ -27,5 +28,7 @@ La validación de `--limit` exige entero positivo. Omitirlo procesa todas las fi
 - `bert` requiere acceso a los archivos del modelo de Hugging Face si aún no están en caché. BERT procesa secuencias con los valores predeterminados del tokenizador y puede fallar con reseñas que excedan el máximo admitido.
 - FastText descarga el modelo `fasttext-wiki-news-subwords-300` mediante Gensim si no está cacheado. ELMo descarga pesos mediante HTTP tras confirmación.
 - `list --add` y `list --modify` son flujos interactivos. El catálogo guarda descripción, estado, entrypoint, include, compatibilidad con ayuda y metadata opcional de schedule: salidas, dependencias, grupo, argumentos por defecto y argumento de overwrite.
+
+`rna` utiliza las mismas etiquetas de sentimiento que SGD (0–1 negativa, 2 neutral, 3–4 positiva). Si `dataset_clean.csv` no tiene una columna de etiqueta de tres clases, crea un mapa cacheado en `optimization_results/training_cache/` sin modificar el CSV fuente. Los checkpoints por corrida se guardan en `optimization_results/rna_checkpoints/`; `--overwrite` regenera resultados y reanuda un checkpoint compatible, mientras que `--restart` fuerza entrenamiento desde cero. BERT y ELMo deben haberse generado con la misma selección de filas (`--limit`, si se usa).
 
 Para uso desatendido, inicia con `poetry run schedule start`. El plan se guarda localmente en `optimization_results/plan.json`; la GUI permite editar selección, orden y argumentos. `--workers N` solo paraleliza comandos consecutivos con el mismo grupo. Cada ejecución nueva limpia logs y estado del scheduler, sin borrar artefactos de datos. Consulta [Optimización](optimizacion.md).

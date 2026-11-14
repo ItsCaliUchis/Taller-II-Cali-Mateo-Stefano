@@ -15,7 +15,7 @@
 
 ## Parcial, experimental o desconectado
 
-- Los vectores BERT y ELMo se producen, pero SGD no los carga ni evalúa.
+- Los vectores BERT y ELMo también se evalúan con el nuevo comando RNA; SGD sigue limitado a BoW, TF-IDF y FastText.
 - Grid search y helpers de optimización existen, pero el bloque en `sgd.main()` está comentado. El JSON de resultados se configura, pero no se escribe desde ese flujo activo.
 - PCA es exploratorio y no alimenta al clasificador ni produce un display de fronteras de decisión.
 - El escenario llamado con escalado utiliza `StandardScaler(with_mean=False)`, pero no configura `class_weight="balanced"`; la documentación y nombres históricos pueden sugerir balanceo sin que ocurra.
