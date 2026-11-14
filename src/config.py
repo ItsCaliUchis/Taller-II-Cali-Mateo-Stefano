@@ -32,10 +32,12 @@ DRIVE_FOLDER_ID = "1wFGB-jh0yyq-igyCQPYAzm-hwppNYLyu"
 DRIVE_FOLDER_URL = f"https://drive.google.com/drive/folders/{DRIVE_FOLDER_ID}?usp=sharing"
 DRIVE_REMOTE_MANIFEST = DATA / "ListadoRemoto.json"
 DRIVE_DOWNLOAD_MANIFEST = DATA / "ListadoDescarga.json"
+MODELS = PROJECT_ROOT / "models"
 
 DATA.mkdir(exist_ok=True)
 CLASSIFICATION_REPORTS.mkdir(exist_ok=True)
 OPTIMIZATION_RESULTS.mkdir(exist_ok=True)
+MODELS.mkdir(exist_ok=True)
 
 # Rutas utilizadas para la herramienta de registro de comandos.
 JSON_COMMANDS = PROJECT_ROOT / "src" / "commands.info.json"
@@ -78,6 +80,15 @@ PIPELINE_LOGS = OPTIMIZATION_RESULTS / "pipeline_logs"
 SGD_CHECKPOINTS = OPTIMIZATION_RESULTS / "sgd_checkpoints"
 
 STOP_FILE = OPTIMIZATION_RESULTS / "pipeline.stop"
+
+# Rutas de almacenado de modelos
+
+models_sgd = MODELS / "sgd_opt"
+sgd_balanced = models_sgd / "balanced"
+sgd_nbalanced = models_sgd / "not_balanced"
+
+sgd_balanced.mkdir(parents=True, exist_ok=True)
+sgd_nbalanced.mkdir(parents=True, exist_ok=True)
 
 
 

@@ -15,6 +15,7 @@ import subprocess
 import re
 import joblib
 import unicodedata
+import pickle
 
 import psutil
 
@@ -264,6 +265,7 @@ def entrenar(X_modelo, y, clf, cv, *, checkpoint_path=None, n_jobs=1, curve_poin
     )
 
     objects = {
+        "model": clf,
         "cm": cm,
         "lc_elements": [train_sizes, train_scores, validation_scores],
         "classification_report": classification_report(y_test, y_pred)
@@ -287,15 +289,20 @@ def _ruta_checkpoint(checkpoint_dir, checkpoint_prefix, nombre, clf):
 
 def modelo_sin_scaler(
     embeddings, clf, nombres, y, cv, *, checkpoint_dir=None,
-    checkpoint_prefix="baseline_unscaled", n_jobs=1, curve_points=3
+    checkpoint_prefix="baseline_unscaled", n_jobs=1, curve_points=3, output_dir
 ):
 
     matrices_sb = [] # sb = sin balancear
     ln_sb = [] # ln = learning curves
     cr_sb = [] # classification reports sin balancear
 
+    modelos = {}
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+
     for embedding, nombre in zip(embeddings,nombres):
         print(f"\nEntrenando SGD sin escalado: {nombre}")
+
         resultados = entrenar(
             embedding,
             y,
@@ -305,6 +312,14 @@ def modelo_sin_scaler(
             n_jobs=n_jobs,
             curve_points=curve_points,
             )
+
+        modelo = resultados["model"]
+        modelos[nombre] = modelo
+
+        ruta_modelo = output_dir / f"{nombre}.pkl"
+
+        with open(ruta_modelo, "wb") as file:
+            pickle.dump(modelo, file)
 
         cm = resultados["cm"]
         train_sizes, train_scores, validation_scores = resultados["lc_elements"]
@@ -319,22 +334,29 @@ def modelo_sin_scaler(
     variables = {
         "matrices": matrices_sb,
         "ln_sb": ln_sb,
-        "cr_sb": cr_sb
+        "cr_sb": cr_sb,
+        "modelos": modelos
     }
 
     return variables
 
 def modelo_con_scaler(
     embeddings, clf, nombres, y, cv, *, checkpoint_dir=None,
-    checkpoint_prefix="baseline_scaled", n_jobs=1, curve_points=3
+    checkpoint_prefix="baseline_scaled", n_jobs=1, curve_points=3, output_dir
 ):
     
     matrices_b = [] # b = balanceado
     ln_b = [] # ln = learning curves
     cr_b = [] # classification reports balanceados
 
+    modelos = {}
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+
     for embedding, nombre in zip(embeddings,nombres):
         print(f"\nEntrenando SGD con escalado: {nombre}")
+
+
         resultados = entrenar(
             embedding,
             y,
@@ -344,6 +366,14 @@ def modelo_con_scaler(
             n_jobs=n_jobs,
             curve_points=curve_points,
             )
+
+        modelo = resultados["model"]
+        modelos[nombre] = modelo
+
+        ruta_modelo = output_dir / f"{nombre}.pkl"
+
+        with open(ruta_modelo, "wb") as file:
+            pickle.dump(modelo, file)
 
         cm = resultados["cm"]
         train_sizes, train_scores, validation_scores = resultados["lc_elements"]
@@ -358,7 +388,8 @@ def modelo_con_scaler(
     variables = {
         "matrices": matrices_b,
         "ln_b": ln_b,
-        "cr_b": cr_b
+        "cr_b": cr_b,
+        "modelos": modelos
     }
 
     return variables

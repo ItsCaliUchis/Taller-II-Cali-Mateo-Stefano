@@ -86,7 +86,7 @@ def main():
         "Classification Report": cr_sb
     })
     
-    df_sb_sgd.to_csv(config.df_sb_sgd, index=False)
+    df_sb_sgd.to_csv(config.df_sb_sgd)
 
     resultados_con_scaler = ejecutar_etapa(
         "Entrenando modelos con escalado",
@@ -113,7 +113,7 @@ def main():
         "Classification Report": cr_b
     })
 
-    df_b_sgd.to_csv(config.df_b_sgd, index=False)
+    df_b_sgd.to_csv(config.df_b_sgd)
 
 
     if not args.no_plots:
@@ -152,10 +152,10 @@ def main():
         nombres,
         titulo = "Curvas de aprendizaje con StandardScaler"
         )
-    """
 
 # ====== MODULO DE OPTIMIZACION DE MODELO (Los resultados estan en la carpeta "optimization_results")======
 
+    """
     hiperparametros = [
     {
         "sgdclassifier__loss": ["hinge", "log_loss", "modified_huber"],
@@ -320,6 +320,7 @@ def main():
             checkpoint_prefix="tuned_unscaled",
             n_jobs=args.jobs,
             curve_points=curve_points,
+            output_dir = config.sgd_nbalanced
         )
 
         resultados_1[nombre] = resultado
@@ -337,8 +338,7 @@ def main():
     })
 
     df_optimizado_sb_sgd.to_csv(
-        config.df_optimizado_sb_sgd,
-        index=False
+        config.df_optimizado_sb_sgd
     )
 
     resultados_2 = {}
@@ -354,6 +354,7 @@ def main():
             checkpoint_prefix="tuned_scaled",
             n_jobs=args.jobs,
             curve_points=curve_points,
+            output_dir = config.sgd_balanced
         )
 
         resultados_2[nombre] = resultado
@@ -371,8 +372,7 @@ def main():
     })
 
     df_optimizado_b_sgd.to_csv(
-        config.df_optimizado_b_sgd,
-        index=False
+        config.df_optimizado_b_sgd
     )
 
     if not args.no_plots:
@@ -411,6 +411,7 @@ def main():
         nombres,
         titulo = "Curvas de aprendizaje con StandardScaler"
         )
+
 
     return 0
 
