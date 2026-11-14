@@ -1,6 +1,7 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
+from pathlib import Path
 
 from sklearn.metrics import ConfusionMatrixDisplay
 
@@ -34,13 +35,18 @@ def graficar_matrices_confusion(
     matrices,
     nombres,
     nombres_clases,
-    titulo="Comparación de modelos"
+    titulo="Comparación de modelos",
+    *,
+    save_path=None,
+    show=True,
 ):
-
+    count = max(1, len(matrices))
+    ncols = min(2, count)
+    nrows = int(np.ceil(count / ncols))
     fig, axes = plt.subplots(
-        nrows=2,
-        ncols=2,
-        figsize=(14, 10),
+        nrows=nrows,
+        ncols=ncols,
+        figsize=(7 * ncols, 5 * nrows),
         squeeze=False
     )
 
@@ -58,9 +64,17 @@ def graficar_matrices_confusion(
         )
 
     fig.suptitle(titulo, fontsize=16)
-
+    for ax in list(axes.flat)[count:]:
+        ax.set_visible(False)
     plt.tight_layout(pad=2)
-    plt.show()
+    if save_path is not None:
+        save_path = Path(save_path)
+        save_path.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(save_path, dpi=160, bbox_inches="tight")
+    if show:
+        plt.show()
+    else:
+        plt.close(fig)
 
 
 def graficar_curva_aprendizaje(
@@ -121,13 +135,18 @@ def graficar_curva_aprendizaje(
 def graficar_curvas_aprendizaje(
     ln,
     nombres,
-    titulo="Comparación de modelos"
+    titulo="Comparación de modelos",
+    *,
+    save_path=None,
+    show=True,
 ):
-
+    count = max(1, len(ln))
+    ncols = min(2, count)
+    nrows = int(np.ceil(count / ncols))
     fig, axes = plt.subplots(
-        nrows=2,
-        ncols=2,
-        figsize=(14, 10),
+        nrows=nrows,
+        ncols=ncols,
+        figsize=(7 * ncols, 5 * nrows),
         squeeze=False
     )
 
@@ -151,4 +170,39 @@ def graficar_curvas_aprendizaje(
     fig.suptitle(titulo, fontsize=16)
 
     plt.tight_layout(pad=2, rect=[0, 0, 1, 0.96])
-    plt.show()
+    for ax in list(axes.flat)[count:]:
+        ax.set_visible(False)
+    if save_path is not None:
+        save_path = Path(save_path)
+        save_path.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(save_path, dpi=160, bbox_inches="tight")
+    if show:
+        plt.show()
+    else:
+        plt.close(fig)
+
+
+def graficar_historial_rna(history, titulo, save_path, *, show=False):
+    """Guarda pérdida y F1 macro de entrenamiento/validación por época."""
+    epochs = np.arange(1, len(history["train_loss"]) + 1)
+    fig, axes = plt.subplots(1, 2, figsize=(13, 5))
+    for axis, metric, ylabel in (
+        (axes[0], "loss", "Loss"),
+        (axes[1], "macro_f1", "F1 macro"),
+    ):
+        axis.plot(epochs, history[f"train_{metric}"], "o-", label="Train")
+        axis.plot(epochs, history[f"val_{metric}"], "o-", label="Validation")
+        axis.set_xlabel("Época")
+        axis.set_ylabel(ylabel)
+        axis.set_title(ylabel)
+        axis.grid(True, alpha=0.3)
+        axis.legend()
+    fig.suptitle(titulo)
+    fig.tight_layout()
+    save_path = Path(save_path)
+    save_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(save_path, dpi=160, bbox_inches="tight")
+    if show:
+        plt.show()
+    else:
+        plt.close(fig)

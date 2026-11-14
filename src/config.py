@@ -27,11 +27,13 @@ def _find_project_root():
 PROJECT_ROOT = _find_project_root()
 DATA = PROJECT_ROOT / "data"
 CLASSIFICATION_REPORTS = PROJECT_ROOT / "classification_reports"
+RNA_REPORTS = CLASSIFICATION_REPORTS / "rna"
 OPTIMIZATION_RESULTS = PROJECT_ROOT / "optimization_results"
 DRIVE_FOLDER_ID = "1wFGB-jh0yyq-igyCQPYAzm-hwppNYLyu"
 DRIVE_FOLDER_URL = f"https://drive.google.com/drive/folders/{DRIVE_FOLDER_ID}?usp=sharing"
 DRIVE_REMOTE_MANIFEST = DATA / "ListadoRemoto.json"
 DRIVE_DOWNLOAD_MANIFEST = DATA / "ListadoDescarga.json"
+RNA_DRIVE_BUNDLE = DATA / "rna_modelos_finales.zip"
 
 DATA.mkdir(exist_ok=True)
 CLASSIFICATION_REPORTS.mkdir(exist_ok=True)
@@ -76,6 +78,18 @@ PIPELINE_STATE = OPTIMIZATION_RESULTS / "pipeline_state.json"
 PIPELINE_PLAN = OPTIMIZATION_RESULTS / "plan.json"
 PIPELINE_LOGS = OPTIMIZATION_RESULTS / "pipeline_logs"
 SGD_CHECKPOINTS = OPTIMIZATION_RESULTS / "sgd_checkpoints"
+RNA_CHECKPOINTS = OPTIMIZATION_RESULTS / "rna_checkpoints"
+RNA_RESULTS = OPTIMIZATION_RESULTS / "rna_results"
+TRAINING_CACHE = OPTIMIZATION_RESULTS / "training_cache"
+
+
+def rna_report_dir(embedding):
+    """Crea y devuelve la carpeta de reportes de una representación RNA."""
+    if embedding not in {"bow", "idf-monogram", "idf-bigram", "fasttext"}:
+        raise ValueError(f"Representación RNA desconocida: {embedding}")
+    directory = RNA_REPORTS / embedding
+    directory.mkdir(parents=True, exist_ok=True)
+    return directory
 
 STOP_FILE = OPTIMIZATION_RESULTS / "pipeline.stop"
 

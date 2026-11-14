@@ -7,6 +7,7 @@ from pathlib import Path
 import re
 import tempfile
 import uuid
+from zipfile import ZIP_STORED, ZipFile
 
 import config
 import requests
@@ -235,6 +236,50 @@ def generate_remote_manifest(
     }
     _write_json_atomic(Path(output_path), payload)
     return payload
+
+
+def create_rna_bundle(output_path=config.RNA_DRIVE_BUNDLE):
+    """Empaqueta modelos RNA completos y sus reportes para el Drive plano."""
+    output_path = Path(output_path)
+    root = config.PROJECT_ROOT
+    results = config.RNA_RESULTS
+    reports = config.RNA_REPORTS
+    representations = ("bow", "idf-bigram", "idf-monogram", "fasttext")
+    phases = ("baseline", "optimized")
+    scales = ("scaled", "unscaled")
+
+    required = []
+    for rep in representations:
+        report_dir = reports / rep
+        for phase in phases:
+            for scale in scales:
+                stem = f"rna_{rep}"
+                required.extend((
+                    results / f"{stem}_best_model_{phase}_{scale}.pt",
+                    results / f"{stem}_metadata_{phase}_{scale}.json",
+                    results / f"{stem}_complete_{phase}_{scale}.json",
+                    report_dir / f"{stem}_report_{phase}_{scale}.csv",
+                    report_dir / f"{stem}_confusion_{phase}_{scale}.csv",
+                    report_dir / f"{stem}_confusion_{phase}_{scale}.png",
+                    report_dir / f"{stem}_history_{phase}_{scale}.csv",
+                    report_dir / f"{stem}_curves_{phase}_{scale}.png",
+                ))
+    missing = [path for path in required if not path.is_file()]
+    if missing:
+        preview = ", ".join(str(path.relative_to(root)) for path in missing[:5])
+        extra = "..." if len(missing) > 5 else ""
+        raise ManifestError(f"Faltan artefactos RNA para crear el paquete: {preview}{extra}")
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = output_path.with_name(f".{output_path.name}.{uuid.uuid4().hex}.tmp")
+    try:
+        with ZipFile(temporary, "w", compression=ZIP_STORED) as archive:
+            for path in required:
+                archive.write(path, path.relative_to(root).as_posix())
+        os.replace(temporary, output_path)
+    finally:
+        temporary.unlink(missing_ok=True)
+    return output_path
 
 
 class DriveDownloader:

@@ -6,7 +6,7 @@ Esta página recoge los valores y funciones usados desde otros módulos como int
 
 | Nombre | Uso |
 |---|---|
-| `PROJECT_ROOT`, `DATA`, `CLASSIFICATION_REPORTS`, `OPTIMIZATION_RESULTS` | Rutas base del repositorio. Las carpetas de datos y resultados se crean al importar `config`. |
+| `PROJECT_ROOT`, `DATA`, `CLASSIFICATION_REPORTS`, `RNA_REPORTS`, `OPTIMIZATION_RESULTS` | Rutas base del repositorio. `config.rna_report_dir(embedding)` crea y devuelve la carpeta de reportes RNA correspondiente a BOW, TF-IDF mono/bigrama o FastText. |
 | Rutas de archivos (`dataset_raw`, `dataset_clean`, `bow_vect`, `bow_vocab`, `idf_bigram`, `idf_monogram`, `fasttext_embeddings`, `fasttext_vocab`, `bert_vect`, `vocabulario_bert`, `elmo_vect`, `vocabulario_elmo`, `negaciones_path`) | Ubicaciones canónicas de entradas y salidas completas. Las ejecuciones limitadas derivan rutas con `ruta_limitada`; no requieren variables separadas. |
 | `ruta_limitada(output_path, limit)` | Retorna la ruta base si `limit` es `None`; con límite positivo, agrega `_limit_N` al nombre antes de la extensión. Rechaza límites no positivos. Es la política compartida de nombres de salida del preprocesamiento. |
 | `cargar_negaciones()` | Lee la lista de negaciones; retorna `[]` si el archivo no existe o está vacío. |

@@ -1,6 +1,6 @@
 # Descargas desde Drive
 
-El comando `drive` lee la carpeta pública configurada en `src/config.py`. No usa OAuth ni tokens. La carpeta debe ser plana y contener un `ListadoRemoto.json` válido.
+El comando `drive` lee la carpeta pública configurada en `src/config.py`. No usa OAuth ni tokens. La carpeta de Drive debe ser plana y contener un `ListadoRemoto.json` válido. Para publicar resultados RNA, `bundle-rna` reúne los modelos finales y sus reportes en un ZIP plano que esta herramienta puede inventariar.
 
 ## Flujo
 
@@ -45,6 +45,7 @@ poetry run drive --download
 poetry run drive --overwrite
 poetry run drive gui
 poetry run drive manifest
+poetry run drive bundle-rna
 ```
 
 - `list` crea el inventario, descarga el manifiesto y muestra `igual`, `faltante`, `diferente`, `solo local` y `sin manifiesto`.
@@ -52,8 +53,9 @@ poetry run drive manifest
 - `--overwrite` transfiere todos los archivos de `ListadoRemoto.json`, incluso los iguales.
 - `gui` muestra los archivos con casillas; `Marcar diferencias` prepara los faltantes y distintos, y `Descargar seleccionados` los transfiere.
 - `manifest` genera `data/ListadoRemoto.json` usando los archivos locales que tengan `drive_id` en `ListadoDescarga.json`. Calcula SHA-256, tamaño, extensión y fechas; también actualiza `local_sha256` para los archivos inventariados.
+- `bundle-rna` crea `data/rna_modelos_finales.zip` con los 16 modelos RNA completos (cuatro representaciones × dos etapas × dos escalados), sus metadatos y los informes, matrices, historiales y curvas. Excluye checkpoints y bases SQLite de Optuna. El ZIP queda en `data/` y aparece en el inventario normal.
 
-El comando `manifest` prepara el JSON para subirlo manualmente a Drive; no lo sube. Solo incluye archivos que existen localmente y tienen `drive_id` en `ListadoDescarga.json`. Calcula fechas a partir de los metadatos del archivo local y las escribe en UTC. Los archivos nuevos deben aparecer primero en el inventario con su ID de Drive.
+El comando `manifest` prepara el JSON para subirlo manualmente a Drive; no lo sube. Solo incluye archivos que existen localmente y tienen `drive_id` en `ListadoDescarga.json`. Calcula fechas a partir de los metadatos del archivo local y las escribe en UTC. Para publicar el ZIP RNA, créalo, súbelo manualmente a la carpeta pública, registra su ID de Drive en `ListadoDescarga.json` y genera/sube el manifiesto actualizado. El downloader no sincroniza carpetas anidadas ni realiza subidas; el ZIP permite conservar la estructura interna usando el formato plano existente.
 
 Los nombres y mensajes que muestra la CLI se normalizan a ASCII para compatibilidad con consolas de Windows; los nombres originales se conservan en ambos manifiestos.
 
