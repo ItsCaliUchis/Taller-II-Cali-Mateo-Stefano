@@ -24,6 +24,7 @@ __pycache__/
 # Los informes de entrenamiento son resultados reproducibles locales.
 /classification_reports/*.csv
 /classification_reports/rna_*.png
+/classification_reports/rna/
 
 # archivos compilados
 *.pyc
