@@ -73,23 +73,25 @@ El comando programado añade `--no-plots`, ya que no hay una sesión gráfica qu
 
 Los comandos de las etapas devuelven código 0 solo al completar correctamente y código distinto de cero cuando falta una entrada, se cancela una operación o falla la generación. De este modo `schedule` puede detener la secuencia en la primera etapa fallida y mostrar el log correspondiente.
 
-## RNA sobre embeddings densos
+## RNA sobre embeddings dispersos y densos
 
-`rna` entrena un MLP por reseña para cada representación elegida; por defecto procesa BERT y ELMo. Separa train/valid/test de forma estratificada, selecciona el mejor modelo por F1 macro de validación y genera reportes de clasificación, matrices de confusión, historial de pérdidas/F1 y pesos del modelo.
+`rna` entrena un MLP por reseña para BOW, TF-IDF monograma, TF-IDF bigrama y FastText. `--embedding all` procesa esas cuatro representaciones; también se puede seleccionar una individualmente. Por cada una compara el baseline con la mejor configuración encontrada por Optuna, con y sin escalado. Optuna maximiza F1 macro de validación y usa MedianPruner para detener pruebas poco prometedoras; el conjunto de test se reserva para la evaluación final.
 
 ```bash
-poetry run rna --embedding both --device auto
-poetry run rna --embedding bert --limit 1000 --device cuda
+poetry run rna --embedding all --device auto
+poetry run rna --embedding bow --device cuda --optimization-trials 10
 poetry run rna --overwrite
 poetry run rna --overwrite --restart
 ```
 
-`--overwrite` vuelve a generar artefactos y continúa un checkpoint compatible. `--restart` descarta el checkpoint correspondiente a esa configuración y vuelve a entrenar. Se guardan checkpoints atómicos por época bajo `optimization_results/rna_checkpoints/`, separados por representación, entradas y parámetros. Los resultados y métricas van a `optimization_results/rna_results/` y `classification_reports/`. Al usar `--limit`, el dataset y las matrices BERT/ELMo deben compartir ese límite; schedule resuelve las rutas limitadas y verifica marcadores de salida por representación. Un entrenamiento interrumpido puede reanudarse con el mismo comando y configuración.
+Las matrices de vocabulario se mantienen dispersas en la primera capa y se preparan por minibatch para evitar densificar todo el corpus. Si una matriz dispersa supera las 100.000 columnas, RNA conserva las características con mejor chi-cuadrado respecto a las etiquetas del conjunto train; el mismo selector se aplica a validación y test y queda cacheado. `--max-features` cambia ese límite. El batch por defecto es 2048; `--batch-size` permite ajustarlo. CUDA se usa cuando está disponible, y el log informa dispositivo y VRAM asignada/reservada. Los checkpoints de los entrenamientos finales se eliminan después de guardar sus artefactos completos; los trials de Optuna son efímeros.
 
-Las cargas de etiquetas/matrices y el entrenamiento de cada representación usan `ejecutar_etapa`: la consola muestra tiempo transcurrido y RAM periódicamente, además del tiempo total al finalizar. También se informa duración por época con pérdida y F1. Cuando se lanza desde `schedule`, la salida queda en `optimization_results/pipeline_logs/rna.log`; el estado del scheduler guarda timestamps de inicio y finalización.
+Los reportes, matrices, historiales y curvas se guardan en `classification_reports/rna/<representacion>/`. Los checkpoints de los entrenamientos finales quedan bajo `optimization_results/rna_checkpoints/`, los modelos y metadatos bajo `optimization_results/rna_results/` y los estudios Optuna en SQLite bajo `optimization_results/rna_results/optuna/`. Al terminar, RNA borra el checkpoint de esa corrida; los checkpoints que queden de interrupciones anteriores solo reanudan la corrida compatible y pueden ocupar mucho espacio. Los trials de búsqueda no guardan checkpoints por época: SQLite conserva sus resultados y parámetros. Si un trial falla, el siguiente inicio continúa con los trials pendientes; el trial fallido no se repite. `--overwrite` regenera artefactos y continúa checkpoints compatibles de entrenamientos finales. `--restart` descarta el checkpoint y vuelve a entrenar. `--scale` o `--no-scale` ejecutan una sola modalidad de escalado; por defecto se generan ambas.
+
+Las cargas de etiquetas/matrices, entrenamiento y optimización usan `ejecutar_etapa`: la consola muestra tiempo transcurrido y RAM periódicamente, además del tiempo por época, pérdida, F1 y VRAM reservada. Cuando se lanza desde `schedule`, la salida queda en `optimization_results/pipeline_logs/rna.log`.
 
 La selección `--device auto` usa CUDA cuando la build de PyTorch y el driver la exponen; de lo contrario usa CPU. Para instalar soporte CUDA, usa el selector oficial de PyTorch y elige la build compatible con el sistema y driver: [Get Started Locally](https://pytorch.org/get-started/locally/). Esta instalación se administra aparte de Poetry; verifica con `poetry run python -c "import torch; print(torch.__version__, torch.cuda.is_available())"`. `--device cuda` falla con un mensaje explícito si CUDA no está disponible. La precisión mixta puede desactivarse con `--no-amp`.
 
 ## Estado local
 
-El estado del scheduler, logs y checkpoints son archivos locales ignorados por Git. Los datasets, matrices y modelos descargados compatibles con LFS se pueden compartir en el remoto. Los checkpoints sirven para reanudar en la misma copia de trabajo; no se suben por defecto.
+El estado del scheduler, logs y checkpoints son archivos locales ignorados por Git. Los checkpoints sirven para reanudar en la misma copia de trabajo; no se recomiendan para compartir ni incluir en respaldos. Para empaquetar y publicar únicamente los artefactos finales de RNA, usa `poetry run drive bundle-rna`; el ZIP contiene los modelos y reportes de las cuatro representaciones y excluye checkpoints y estudios Optuna. Los modelos TF-IDF aún no incluyen los vectorizadores ajustados necesarios para inferencia de texto nuevo; ese pendiente está registrado en `estado.md`.

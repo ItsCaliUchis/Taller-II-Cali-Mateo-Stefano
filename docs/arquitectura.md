@@ -15,7 +15,7 @@ API de reseñas → dataset_raw.csv → exploración/limpieza → dataset_clean.
 - `src/clean/cleanup.py`: transforma `text` en `reviews`, normaliza espacios extremos/minúsculas y conserva `id`, `reviews`, `label` (y `Unnamed: 0` si estaba presente).
 - `src/preprocessing/`: vectorizadores BoW, TF-IDF por n-gramas, FastText, BERT y ELMo.
 - `src/training/sgd.py`: evaluación de clasificadores SGD y generación de reportes y gráficos.
-- `src/training/rna.py`: entrenamiento MLP por minibatches sobre matrices densas BERT y ELMo, con reanudación por checkpoints.
+- `src/training/rna.py`: entrenamiento MLP por minibatches sobre BOW, TF-IDF y FastText; la primera capa aprovecha matrices dispersas y Optuna busca hiperparámetros con pruning.
 - `src/training/graphics.py`: funciones de visualización.
 - `src/training/pca_exploratorio.py`: experimento PCA; la carga de datos ocurre al invocar `main`, no al importar.
 - `src/utils.py`: limpieza lingüística, control de ejecución, carga de matrices y entrenamiento/evaluación compartidos.
