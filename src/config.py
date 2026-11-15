@@ -73,6 +73,58 @@ df_b_sgd = CLASSIFICATION_REPORTS / "classification_report_b_sgd.csv" # sin opti
 df_optimizado_sb_sgd = CLASSIFICATION_REPORTS / "classification_report_opt_sb_sgd.csv" # optimizado (no balanceado)
 df_optimizado_b_sgd = CLASSIFICATION_REPORTS / "classification_report_opt_b_sgd.csv" # optimizado (balanceado)
 
+# Rutas de resultados de LinearSVC
+SVM_DIR = PROJECT_ROOT / "SVM"
+SVM_SIN_OPT_DIR = SVM_DIR / "sin optimizacion"
+SVM_CON_OPT_DIR = SVM_DIR / "con optimizacion"
+
+SVM_SIN_OPT_DIR.mkdir(parents=True, exist_ok=True)
+SVM_CON_OPT_DIR.mkdir(parents=True, exist_ok=True)
+
+# CSV base
+df_sin_scaler_linear_svc = (
+    SVM_SIN_OPT_DIR / "classification_report_sin_escalado.csv"
+)
+df_con_scaler_linear_svc = (
+    SVM_SIN_OPT_DIR / "classification_report_con_escalado.csv"
+)
+
+# CSV optimizados
+df_opt_sin_scaler_linear_svc = (
+    SVM_CON_OPT_DIR / "classification_report_sin_escalado.csv"
+)
+df_opt_con_scaler_linear_svc = (
+    SVM_CON_OPT_DIR / "classification_report_con_escalado.csv"
+)
+
+# Gráficos base
+grafico_matrices_sin_scaler_linear_svc = (
+    SVM_SIN_OPT_DIR / "matrices_sin_escalado.png"
+)
+grafico_matrices_con_scaler_linear_svc = (
+    SVM_SIN_OPT_DIR / "matrices_con_escalado.png"
+)
+grafico_curvas_sin_scaler_linear_svc = (
+    SVM_SIN_OPT_DIR / "curvas_sin_escalado.png"
+)
+grafico_curvas_con_scaler_linear_svc = (
+    SVM_SIN_OPT_DIR / "curvas_con_escalado.png"
+)
+
+# Gráficos optimizados
+grafico_matrices_opt_sin_scaler_linear_svc = (
+    SVM_CON_OPT_DIR / "matrices_sin_escalado.png"
+)
+grafico_matrices_opt_con_scaler_linear_svc = (
+    SVM_CON_OPT_DIR / "matrices_con_escalado.png"
+)
+grafico_curvas_opt_sin_scaler_linear_svc = (
+    SVM_CON_OPT_DIR / "curvas_sin_escalado.png"
+)
+grafico_curvas_opt_con_scaler_linear_svc = (
+    SVM_CON_OPT_DIR / "curvas_con_escalado.png"
+)
+
 # Rutas de Resultados de Optimización de Modelos
 
 resultados_sgd = OPTIMIZATION_RESULTS / "resultados_sgd.json"
