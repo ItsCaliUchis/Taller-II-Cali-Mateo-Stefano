@@ -136,6 +136,24 @@ RNA_CHECKPOINTS = OPTIMIZATION_RESULTS / "rna_checkpoints"
 RNA_RESULTS = OPTIMIZATION_RESULTS / "rna_results"
 TRAINING_CACHE = OPTIMIZATION_RESULTS / "training_cache"
 
+# Entrenamiento y artefactos SVM optimizado.
+SVM_RESULTS = PROJECT_ROOT / "results" / "svm"
+SVM_CACHE = TRAINING_CACHE / "svm_cache"
+SVM_CHECKPOINT = SVM_RESULTS / "resultados_svm.json"
+SVM_SUMMARY = SVM_RESULTS / "resultados_svm.csv"
+SVM_ARTIFACTS = SVM_RESULTS / "artifacts"
+SVM_RESULTS.mkdir(parents=True, exist_ok=True)
+SVM_CACHE.mkdir(parents=True, exist_ok=True)
+SVM_ARTIFACTS.mkdir(parents=True, exist_ok=True)
+
+svm_dataset = dataset_clean
+svm_embeddings = {
+    "BoW": bow_vect,
+    "TF-IDF Bigrama": idf_bigram,
+    "TF-IDF Monogram": idf_monogram,
+    "FastText": fasttext_embeddings,
+}
+
 
 def rna_report_dir(embedding):
     """Crea y devuelve la carpeta de reportes de una representación RNA."""

@@ -41,6 +41,7 @@ rna = "training.rna:main"
 schedule = "schedule:main"
 drive = "drive_downloader.cli:main"
 frontend = "frontend.app:main"
+svm = "training.svm:main"
 
 [tool.poetry]
 packages = [
