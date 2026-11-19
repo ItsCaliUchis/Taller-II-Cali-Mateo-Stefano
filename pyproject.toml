@@ -1,3 +1,4 @@
+
 [project]
 name = "calimateostefano-workplace"
 version = "0.1.0"
@@ -21,6 +22,7 @@ dependencies = [
     "tf-keras (==2.21.0)",
     "transformers (>=5.20.1,<6.0.0)",
     "optuna (>=4.0.0,<5.0.0)",
+    "gradio (>=5.49,<7.0.0)"
 ]
 
 [project.scripts]
@@ -38,6 +40,7 @@ sgd = "training.sgd:main"
 rna = "training.rna:main"
 schedule = "schedule:main"
 drive = "drive_downloader.cli:main"
+frontend = "frontend.app:main"
 
 [tool.poetry]
 packages = [
@@ -45,17 +48,13 @@ packages = [
     {include = "config.py", from = "src"},
     {include = "drive_downloader", from = "src"},
     {include = "extract", from = "src"},
+    {include = "frontend", from = "src"},
     {include = "list_tools.py", from = "src"},
     {include = "preprocessing", from = "src"},
     {include = "schedule.py", from = "src"},
     {include = "training", from = "src"},
     {include = "utils.py", from = "src"},
 ]
-
-
-[build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
-build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.dependencies]
 torch = [
@@ -65,6 +64,12 @@ torch = [
 
 [project.optional-dependencies]
 cuda = []
+
+[dependency-groups]
+dev = [
+    "tomlkit (>=0.12.0,<0.15.0)",
+    "watchdog (>=7.1.0,<8.0.0)"
+]
 
 [[tool.poetry.source]]
 name = "pytorch-cpu"
@@ -76,7 +81,6 @@ name = "pytorch-cuda"
 url = "https://download.pytorch.org/whl/cu132"
 priority = "explicit"
 
-[dependency-groups]
-dev = [
-    "tomlkit (>=0.15.2,<0.16.0)"
-]
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

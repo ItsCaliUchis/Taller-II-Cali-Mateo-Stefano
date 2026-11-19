@@ -311,12 +311,7 @@ def modelo_sin_scaler(
     output_dir.mkdir(parents=True, exist_ok=True)
 
     for embedding, nombre in zip(embeddings,nombres):
-<<<<<<< Updated upstream
-        print(f"\nEntrenando SGD sin escalado: {nombre}")
-
-=======
         print(f"\nEntrenando modelo sin escalado: {nombre}")
->>>>>>> Stashed changes
         resultados = entrenar(
             embedding,
             y,
@@ -368,13 +363,7 @@ def modelo_con_scaler(
     output_dir.mkdir(parents=True, exist_ok=True)
 
     for embedding, nombre in zip(embeddings,nombres):
-<<<<<<< Updated upstream
-        print(f"\nEntrenando SGD con escalado: {nombre}")
-
-
-=======
         print(f"\nEntrenando modelo con escalado: {nombre}")
->>>>>>> Stashed changes
         resultados = entrenar(
             embedding,
             y,

@@ -506,6 +506,14 @@
       "include": "drive_downloader",
       "supports_help": true,
       "schedule": null
+    },
+    "frontend": {
+      "entrypoint": "frontend.app:main",
+      "description": "levantar servicio de frontend",
+      "status": "active",
+      "include": "frontend",
+      "supports_help": false,
+      "schedule": null
     }
   }
 }

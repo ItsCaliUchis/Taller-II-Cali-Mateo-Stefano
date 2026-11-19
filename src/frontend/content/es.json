@@ -1,0 +1,111 @@
+{
+  "app": {
+    "title": "Mellow · Sentiment Lab"
+  },
+  "nav": {
+    "home": "✿   Inicio",
+    "single": "♡   Inferencia individual",
+    "batch": "▤   Análisis por lotes",
+    "workers": "◈   Motores",
+    "feedback": "♡   Feedback",
+    "history": "◷   Historial"
+  },
+  "engines": [
+    "RNA · TF-IDF",
+    "RNA · BoW",
+    "SVM · TF-IDF",
+    "FastText · baseline"
+  ],
+  "sentiment": {
+    "negative": "Negativo",
+    "neutral": "Neutral",
+    "positive": "Positivo"
+  },
+  "home": {
+    "stats": [
+      {
+        "value": "3",
+        "label": "Clases de sentimiento"
+      },
+      {
+        "value": "2",
+        "label": "Modalidades de análisis"
+      },
+      {
+        "value": "Demo",
+        "label": "Estado del entorno"
+      }
+    ],
+    "single_button": "Analizar una reseña →",
+    "batch_button": "Procesar un CSV →"
+  },
+  "inference": {
+    "input_label": "Texto de la reseña",
+    "placeholder": "For example: The product is beautiful and works perfectly. I really recommend it…",
+    "engine_label": "Motor seleccionado",
+    "run_button": "Analizar sentimiento ✧",
+    "empty_result": "Tu resultado va a aparecer acá ✿",
+    "empty_status": "Primero escribí una reseña para analizar.",
+    "demo_status": "Resultado demo: **{label}** · Motor seleccionado: `{engine}`"
+  },
+  "result": {
+    "estimated": "RESULTADO ESTIMADO",
+    "demo_tag": "MODO DEMO",
+    "detected": "Sentimiento detectado",
+    "distribution": "Distribución de probabilidades",
+    "demo_note": "Este resultado es ilustrativo. Todavía no hay un motor de inferencia conectado."
+  },
+  "feedback": {
+    "yes_button": "♡ Sí, fue correcta",
+    "no_button": "No, se equivocó",
+    "no_inference": "No hay una inferencia reciente para evaluar.",
+    "already_submitted": "Ya registraste feedback para esta inferencia.",
+    "saved_correct": "¡Gracias! Tu feedback quedó guardado en esta sesión.",
+    "saved_incorrect": "Feedback guardado. Lo vamos a conservar para revisión posterior.",
+    "empty_list": "<div class='empty-state'>Todavía no recibimos feedback.<br><span>Tu revisión de las predicciones va a quedar registrada acá.</span></div>",
+    "correct": "Correcta",
+    "incorrect": "Incorrecta"
+  },
+  "batch": {
+    "file_label": "Archivo CSV",
+    "engine_label": "Motor seleccionado",
+    "run_button": "Procesar archivo ✧",
+    "download_label": "Descargar resultados",
+    "missing_file": "Subí un archivo CSV para procesarlo.",
+    "missing_headers": "El CSV no tiene encabezados.",
+    "no_reviews": "No encontré reseñas con contenido en la columna '{column}'.",
+    "error": "<div class='error-box'>No pude procesar el archivo: {error}</div>",
+    "summary": "<div class='batch-summary'><div><strong>{total}</strong><span>reseñas procesadas</span></div><div><strong>{positive}</strong><span>positivas</span></div><div><strong>{neutral}</strong><span>neutrales</span></div><div><strong>{negative}</strong><span>negativas</span></div></div><p class='muted'>Columna utilizada: <code>{column}</code> · Motor: <code>{engine}</code> · Modo demo</p>",
+    "preview_review": "Reseña",
+    "preview_sentiment": "Sentimiento demo"
+  },
+  "history": {
+    "empty": "<div class='empty-state'>Todavía no hay inferencias en esta sesión.<br><span>Cuando analices una reseña, va a aparecer acá.</span></div>",
+    "clear_button": "Limpiar historial"
+  },
+  "html": {
+    "topbar": "<div id='topbar'><div class='brand'><div class='brand-mark'>✿</div><div><div class='brand-name'>mellow<span style='color:#c6b9bd'>.</span></div><div class='brand-sub'>SENTIMENT LAB</div></div></div><div class='top-status'><span class='status-dot'></span> Entorno de demostración</div></div>",
+    "nav_workspace": "<div class='nav-caption'>ESPACIO DE TRABAJO</div>",
+    "nav_tracking": "<div class='nav-caption' style='margin-top:12px'>SEGUIMIENTO</div>",
+    "sidebar_note": "<div class='sidebar-note'><b>Un pequeño laboratorio ✧</b>Explorá los resultados, compará motores y ayudanos a revisar las predicciones.</div>",
+    "home_hero": "<div class='hero'><h2>Un vistazo a lo que dicen las reseñas.</h2><p>Un espacio para explorar análisis de sentimiento de forma clara, comparar resultados y revisar qué tan bien interpreta el modelo cada opinión.</p><span class='hero-chip'>✧ Natural language · Sentiment analysis</span></div>",
+    "home_heading": "<div class='page-heading'><h1>Tu laboratorio</h1><p>Todo lo que necesitás para empezar, en un solo lugar.</p></div>",
+    "stat_card": "<div class='stat-card'><div class='stat-value'>{value}</div><div class='stat-label'>{label}</div></div>",
+    "home_single_card": "<div class='soft-card'><div class='section-kicker'>EMPEZÁ POR ACÁ</div><div class='card-title'>Una reseña a la vez</div><div class='card-sub'>Probá una opinión y mirá cómo se distribuyen las probabilidades.</div></div>",
+    "home_batch_card": "<div class='soft-card'><div class='section-kicker'>MUCHOS DATOS</div><div class='card-title'>Procesamiento por lotes</div><div class='card-sub'>Cargá un CSV y obtené un archivo con las predicciones agregadas.</div></div>",
+    "footer": "<div class='footer-note'>Hecho con cuidado · Mellow Sentiment Lab</div>",
+    "inference_heading": "<div class='page-heading'><h1>Inferencia individual ♡</h1><p>Escribí o pegá una reseña para analizar su sentimiento.</p></div>",
+    "inference_card_heading": "<div class='card-title'>Tu reseña</div>",
+    "english_notice": "<div class='english-notice'><span>ⓘ</span><div><strong>Solo inglés:</strong> los motores actuales funcionan únicamente con reseñas escritas en inglés. Los textos en otros idiomas pueden producir resultados incorrectos.</div></div>",
+    "feedback_prompt": "<div class='soft-card'><div class='card-title'>¿La predicción fue correcta?</div><div class='card-sub'>Podés registrar una sola respuesta por inferencia. Una vez enviada, no se puede cambiar. El feedback no modifica los pesos del modelo.</div></div>",
+    "result_placeholder": "<div class='empty-result'>Tu resultado va a aparecer acá ✿</div>",
+    "batch_heading": "<div class='page-heading'><h1>Análisis por lotes ▤</h1><p>Procesá un conjunto de reseñas desde un archivo CSV.</p></div>",
+    "batch_card_heading": "<div class='card-title'>Cargar dataset</div><div class='card-sub'>El archivo debe tener encabezados. Se busca una columna text, review, review_text o content; si no existe, se usa la primera.</div>",
+    "batch_placeholder": "<div class='empty-result'>El resumen del procesamiento va a aparecer acá.</div>",
+    "workers_heading": "<div class='page-heading'><h1>Motores de inferencia ◈</h1><p>Vista de estado de los nodos disponibles. La conexión real se incorpora cuando definamos el protocolo del backend.</p></div>",
+    "workers_cards": "<div class='soft-card'><div class='worker-row'><div><div class='worker-name'>RNA · TF-IDF</div><div class='worker-meta'>Nodo de demostración · CPU/GPU por confirmar</div></div><span class='worker-pill off'>No conectado</span></div><hr style='border:0;border-top:1px solid #f0edf5;margin:18px 0'><div class='worker-row'><div><div class='worker-name'>RNA · BoW</div><div class='worker-meta'>Nodo de demostración · Sin heartbeat</div></div><span class='worker-pill off'>No conectado</span></div><hr style='border:0;border-top:1px solid #f0edf5;margin:18px 0'><div class='worker-row'><div><div class='worker-name'>SVM · TF-IDF</div><div class='worker-meta'>Nodo de demostración · Sin heartbeat</div></div><span class='worker-pill off'>No conectado</span></div><hr style='border:0;border-top:1px solid #f0edf5;margin:18px 0'><div class='worker-row'><div><div class='worker-name'>FastText · baseline</div><div class='worker-meta'>Nodo de demostración · Sin heartbeat</div></div><span class='worker-pill off'>No conectado</span></div></div>",
+    "workers_note": "<div class='soft-card'><div class='card-title'>Diseño desacoplado</div><div class='card-sub'>Esta pantalla no descubre ni administra procesos todavía. Es únicamente la representación visual del estado esperado.</div></div>",
+    "feedback_heading": "<div class='page-heading'><h1>Feedback ♡</h1><p>Revisiones enviadas sobre las predicciones de esta sesión.</p></div>",
+    "history_heading": "<div class='page-heading'><h1>Historial ◷</h1><p>Las últimas inferencias realizadas en esta sesión.</p></div>"
+  }
+}

@@ -26,5 +26,8 @@ __pycache__/
 /classification_reports/rna_*.png
 /classification_reports/rna/
 
+# modelos relocated manualmente:
+/models/
+
 # archivos compilados
 *.pyc
