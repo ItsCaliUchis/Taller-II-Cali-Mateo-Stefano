@@ -1,33 +1,12 @@
 
-"""
-Optimización de hiperparámetros — LinearSVC
-
-Comparación de cuatro representaciones:
-- BoW
-- TF-IDF Bigrama
-- TF-IDF Monogram
-- FastText
-
-Cada representación se evalúa con y sin class_weight="balanced".
-
-Modelo: LinearSVC (CPU)
-Búsqueda: GridSearchCV
-Validación: StratifiedKFold (5 folds)
-Métrica: F1-macro
-Persistencia: JSON + CSV
-Progreso: TQDM + Joblib
-
-Este script esta directamente transpilado desde la notebook `svm.ipynb`del usuario TeoMarquez.
-
-GoogleCollab presenta en su free trial un límite de 12 horas de ejecución, por lo que se recomienda ejecutar este script en un entorno local con recursos suficientes (mayor a 2 nucleos logicos).
-"""
+"""Optimización y evaluación reanudable de LinearSVC sobre embeddings."""
 
 
 # ============================================================
 # 1. IMPORTS
 # ============================================================
 
-import os
+import argparse
 import gc
 import json
 import time
@@ -47,7 +26,6 @@ from scipy.sparse import load_npz
 from sklearn.base import clone
 from sklearn.model_selection import (
     train_test_split,
-    GridSearchCV,
     StratifiedKFold,
     ParameterGrid,
 )
@@ -71,11 +49,12 @@ from sklearn.svm import LinearSVC
 from sklearn.preprocessing import StandardScaler
 
 from joblib import Memory, cpu_count
+from scipy.sparse import issparse
 from threadpoolctl import threadpool_limits
 from tqdm.auto import tqdm
 
 import config
-from utils import ejecutar_etapa
+from utils import ejecutar_etapa, ejecutar_grid_search
 from .data import load_sentiment_labels
 from .graphics import graficar_matrices_confusion
 
@@ -107,23 +86,19 @@ def diagnosticar_procesador():
     print(f"RAM disponible: {memoria.available / 1024**3:.2f} GiB")
 
     print(f"\nWorkers sugeridos: {recomendados}")
-    print("Recomendación: comparar 6 y 8 workers.")
 
     return recomendados
 
 
-WORKERS_SUGERIDOS = 1
+WORKERS_SUGERIDOS = None
 
 
 # ============================================================
 # 3. CONFIGURACIÓN
 # ============================================================
 
-PROJECT_DIR = config.PROJECT_ROOT
-DATA_DIR = config.DATA
 DATASET_PATH = config.svm_dataset
 EMBEDDING_PATHS = config.svm_embeddings
-OUTPUT_DIR = config.SVM_RESULTS
 CACHE_DIR = config.SVM_CACHE
 CHECKPOINT_PATH = config.SVM_CHECKPOINT
 CSV_PATH = config.SVM_SUMMARY
@@ -139,12 +114,8 @@ CV_RANDOM_STATE = 42
 
 MAX_ITER = 5000
 
-N_JOBS = WORKERS_SUGERIDOS
+N_JOBS = 4
 RESUME = True
-
-OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-CACHE_DIR.mkdir(parents=True, exist_ok=True)
-
 
 # ============================================================
 # 4. VALIDACIÓN DE ARCHIVOS Y ETIQUETAS
@@ -180,8 +151,8 @@ y = None
 
 def inspeccionar_embedding(nombre, matriz):
     memoria = (
-        matriz.data.nbytes
-        if hasattr(matriz, "data")
+        matriz.data.nbytes + matriz.indices.nbytes + matriz.indptr.nbytes
+        if issparse(matriz)
         else matriz.nbytes
     )
 
@@ -196,7 +167,7 @@ def inspeccionar_embedding(nombre, matriz):
         f"shape={matriz.shape}, "
         f"nnz={nnz:,}, "
         f"dtype={matriz.dtype}, "
-        f"memoria datos={memoria / 1024**2:.1f} MiB"
+        f"memoria={memoria / 1024**2:.1f} MiB"
     )
 
 
@@ -210,6 +181,16 @@ def cargar_embeddings(
         print(f"\nCargando {nombre}...")
 
         matriz = load_npz(ruta)
+
+        if not issparse(matriz):
+            raise TypeError(f"{nombre}: se esperaba una matriz dispersa SciPy.")
+
+        # LinearSVC/liblinear opera en doble precisión. Normalizar aquí a CSR
+        # evita conversiones repetidas dentro de cada fold y cada candidato.
+        matriz = matriz.tocsr().astype(np.float64, copy=False)
+        matriz.sum_duplicates()
+        matriz.eliminate_zeros()
+        matriz.sort_indices()
 
         if (
             cantidad_muestras is not None
@@ -241,19 +222,16 @@ HIPERPARAMETROS = [
         "linearsvc__C": C_VALUES,
         "linearsvc__penalty": ["l2"],
         "linearsvc__loss": ["squared_hinge"],
-        "linearsvc__dual": [True, False],
     },
     {
         "linearsvc__C": C_VALUES,
         "linearsvc__penalty": ["l2"],
         "linearsvc__loss": ["hinge"],
-        "linearsvc__dual": [True],
     },
     {
         "linearsvc__C": C_VALUES,
         "linearsvc__penalty": ["l1"],
         "linearsvc__loss": ["squared_hinge"],
-        "linearsvc__dual": [False],
     },
 ]
 
@@ -262,20 +240,6 @@ CV = StratifiedKFold(
     shuffle=True,
     random_state=CV_RANDOM_STATE,
 )
-
-print(f"\nCandidatos: {len(ParameterGrid(HIPERPARAMETROS))}")
-print(f"Folds: {CV_SPLITS}")
-
-print(
-    "Fits por experimento:",
-    len(ParameterGrid(HIPERPARAMETROS)) * CV_SPLITS
-)
-
-print(
-    "Experimentos:",
-    len(EMBEDDING_PATHS) * 2
-)
-
 
 # ============================================================
 # 7. PIPELINES
@@ -294,6 +258,7 @@ def crear_clasificadores(memory_cache=memory):
             max_iter=MAX_ITER,
             random_state=42,
             class_weight=None,
+            dual="auto",
         ),
         memory=memory_cache,
     )
@@ -304,6 +269,7 @@ def crear_clasificadores(memory_cache=memory):
             max_iter=MAX_ITER,
             random_state=42,
             class_weight="balanced",
+            dual="auto",
         ),
         memory=memory_cache,
     )
@@ -497,7 +463,7 @@ def construir_firma_configuracion():
         }
 
     config = {
-        "version": 1,
+        "version": 2,
         "files": archivos,
         "label_column": LABEL_COLUMN,
         "train_size": TRAIN_SIZE,
@@ -507,6 +473,8 @@ def construir_firma_configuracion():
         "max_iter": MAX_ITER,
         "parameter_grid": HIPERPARAMETROS,
         "scoring": "f1_macro",
+        "input_dtype": "float64",
+        "input_format": "csr",
     }
 
     serializado = json.dumps(
@@ -600,6 +568,16 @@ def guardar_checkpoint(checkpoint):
     )
 
     print(f"\nCheckpoint actualizado: {CHECKPOINT_PATH}")
+
+
+def _fit_busqueda_con_progreso(busqueda, X_train, y_train, progreso, nombre):
+    """Muestra actividad continua y avance por cada fit completado."""
+    def ajustar():
+        with threadpool_limits(limits=1):
+            with tqdm_joblib(progreso):
+                return busqueda.fit(X_train, y_train)
+
+    return ejecutar_etapa(f"Búsqueda CV: {nombre}", ajustar)
 
 
 # ============================================================
@@ -747,19 +725,6 @@ def optimizar_modelo(
             flush=True,
         )
 
-        busqueda = GridSearchCV(
-            estimator=clone(clasificador),
-            param_grid=HIPERPARAMETROS,
-            scoring="f1_macro",
-            cv=CV,
-            n_jobs=n_jobs,
-            pre_dispatch=n_jobs,
-            verbose=0,
-            refit=False,
-            return_train_score=False,
-            error_score="raise",
-        )
-
         progreso = tqdm(
             total=total_fits,
             desc=f"{nombre_embedding} | {nombre_variante}",
@@ -767,13 +732,21 @@ def optimizar_modelo(
             dynamic_ncols=True,
             smoothing=0.1,
         )
-
         inicio_busqueda = time.perf_counter()
 
-        with threadpool_limits(limits=1):
-
-            with tqdm_joblib(progreso):
-                busqueda.fit(X_train, y_train)
+        busqueda = ejecutar_grid_search(
+            X_train,
+            y_train,
+            clasificador,
+            HIPERPARAMETROS,
+            CV,
+            n_jobs=n_jobs,
+            pre_dispatch=n_jobs,
+            verbose=0,
+            fit_callback=lambda search, X, labels: _fit_busqueda_con_progreso(
+                search, X, labels, progreso, f"{nombre_embedding} | {nombre_variante}"
+            ),
+        )
 
         duracion_busqueda = (
             time.perf_counter() - inicio_busqueda
@@ -844,12 +817,14 @@ def optimizar_modelo(
         **best_params
     )
 
-    with threadpool_limits(limits=1):
+    def ajustar_modelo_final():
+        with threadpool_limits(limits=1):
+            return modelo_final.fit(X_train, y_train)
 
-        modelo_final.fit(
-            X_train,
-            y_train,
-        )
+    ejecutar_etapa(
+        f"Entrenamiento final: {nombre_embedding} | {nombre_variante}",
+        ajustar_modelo_final,
+    )
 
     # Se elimina la referencia al caché del pipeline.
     # El modelo ya está entrenado y no necesita conservar
@@ -964,7 +939,9 @@ def optimizar_modelo(
     )
 
     ruta_matriz_png = directorio / "confusion_matrix.png"
-    graficar_matrices_confusion(
+    ejecutar_etapa(
+        f"Graficando matriz de confusión: {nombre_embedding} | {nombre_variante}",
+        graficar_matrices_confusion,
         [matriz_confusion],
         [f"{nombre_embedding} — {nombre_variante}"],
         clases,
@@ -1125,12 +1102,27 @@ def optimizar_modelo(
 # 12. EJECUCIÓN PRINCIPAL
 # ============================================================
 
-def main(n_jobs=N_JOBS):
+def main(n_jobs=N_JOBS, argv=None):
 
     global y, embeddings
 
+    parser = argparse.ArgumentParser(
+        description="Optimiza y evalúa clasificadores LinearSVC."
+    )
+    parser.add_argument(
+        "--jobs",
+        type=int,
+        default=n_jobs,
+        help="Procesos paralelos para la búsqueda (por defecto, hasta 8 según CPU disponible).",
+    )
+    args = parser.parse_args(argv)
+    n_jobs = args.jobs
+
+    if n_jobs is None:
+        n_jobs = diagnosticar_procesador()
+
     if n_jobs < 1:
-        raise ValueError("n_jobs debe ser al menos 1.")
+        parser.error("--jobs debe ser un entero positivo.")
 
     inicio_total = time.perf_counter()
 
@@ -1155,6 +1147,8 @@ def main(n_jobs=N_JOBS):
     print(f"Configuración: {n_jobs} procesos paralelos")
     print("Estrategia: GridSearchCV + StratifiedKFold")
     print("Métrica: F1-macro")
+    print(f"Candidatos por experimento: {len(ParameterGrid(HIPERPARAMETROS))}")
+    print(f"Fits CV por experimento: {len(ParameterGrid(HIPERPARAMETROS)) * CV_SPLITS}")
 
     print(
         "Experimentos completados previamente: "

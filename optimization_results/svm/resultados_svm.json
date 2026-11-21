@@ -1,0 +1,93 @@
+{
+  "signature": "84d0199b8251c6ebec2646bddc6cbe0099bd25129f39b6c01ebaa58f88baa436",
+  "experiments": {
+    "BoW::sin balancear": {
+      "embedding": "BoW",
+      "variante": "sin balancear",
+      "best_params": {
+        "linearsvc__C": 0.1,
+        "linearsvc__loss": "squared_hinge",
+        "linearsvc__penalty": "l2"
+      },
+      "best_f1_macro_cv": 0.595126213983751,
+      "elapsed_seconds": 892.598514700001
+    },
+    "BoW::balanceado": {
+      "embedding": "BoW",
+      "variante": "balanceado",
+      "best_params": {
+        "linearsvc__C": 0.01,
+        "linearsvc__loss": "squared_hinge",
+        "linearsvc__penalty": "l1"
+      },
+      "best_f1_macro_cv": 0.6128456681345422,
+      "elapsed_seconds": 3420.6573169999992
+    },
+    "TF-IDF Bigrama::sin balancear": {
+      "embedding": "TF-IDF Bigrama",
+      "variante": "sin balancear",
+      "best_params": {
+        "linearsvc__C": 10,
+        "linearsvc__loss": "hinge",
+        "linearsvc__penalty": "l2"
+      },
+      "best_f1_macro_cv": 0.574660317436986,
+      "elapsed_seconds": 669.4850396000002
+    },
+    "TF-IDF Bigrama::balanceado": {
+      "embedding": "TF-IDF Bigrama",
+      "variante": "balanceado",
+      "best_params": {
+        "linearsvc__C": 0.01,
+        "linearsvc__loss": "squared_hinge",
+        "linearsvc__penalty": "l1"
+      },
+      "best_f1_macro_cv": 0.5524071744925465,
+      "elapsed_seconds": 7737.1717715999985
+    },
+    "TF-IDF Monogram::sin balancear": {
+      "embedding": "TF-IDF Monogram",
+      "variante": "sin balancear",
+      "best_params": {
+        "linearsvc__C": 1,
+        "linearsvc__loss": "squared_hinge",
+        "linearsvc__penalty": "l2"
+      },
+      "best_f1_macro_cv": 0.5967272161102308,
+      "elapsed_seconds": 191.88861629999883
+    },
+    "TF-IDF Monogram::balanceado": {
+      "embedding": "TF-IDF Monogram",
+      "variante": "balanceado",
+      "best_params": {
+        "linearsvc__C": 0.01,
+        "linearsvc__loss": "squared_hinge",
+        "linearsvc__penalty": "l1"
+      },
+      "best_f1_macro_cv": 0.6047251091731181,
+      "elapsed_seconds": 2250.2948209000024
+    },
+    "FastText::sin balancear": {
+      "embedding": "FastText",
+      "variante": "sin balancear",
+      "best_params": {
+        "linearsvc__C": 10,
+        "linearsvc__loss": "squared_hinge",
+        "linearsvc__penalty": "l2"
+      },
+      "best_f1_macro_cv": 0.5243291640242734,
+      "elapsed_seconds": 5513.314440500002
+    },
+    "FastText::balanceado": {
+      "embedding": "FastText",
+      "variante": "balanceado",
+      "best_params": {
+        "linearsvc__C": 1,
+        "linearsvc__loss": "squared_hinge",
+        "linearsvc__penalty": "l2"
+      },
+      "best_f1_macro_cv": 0.5841639744038287,
+      "elapsed_seconds": 13453.367384499998
+    }
+  }
+}

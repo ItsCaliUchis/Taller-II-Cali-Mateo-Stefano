@@ -33,10 +33,15 @@ API de reseñas → dataset_raw.csv → exploración/limpieza → dataset_clean.
 | `data/fasttext_embeddings.npz` | Promedio de vectores de palabras por reseña, almacenado como CSR |
 | `data/bert_vect.npz`, `data/elmo_vect.npz` | NPZ comprimido con clave `embeddings` (matriz densa) |
 | `*_vocab.csv` | Columnas `index` y `term` del vocabulario asociado |
-| `classification_reports/` | Reportes CSV de los modelos SGD |
-| `optimization_results/` | Ubicación configurada para resultados de optimización |
+| `classification_reports/sgd/` | Reportes CSV de SGD |
+| `classification_reports/rna/` | Reportes, matrices e historiales de RNA por representación |
+| `classification_reports/linear_svc/` | Reportes y gráficos de LinearSVC, separados por optimización |
+| `classification_reports/svm/` | Resumen de las búsquedas SVM |
+| `optimization_results/svm/` | Checkpoint reanudable de las búsquedas SVM |
+| `optimization_results/` | Planificador y cachés de entrenamiento |
+| `models/linear_svc/`, `models/svm/` | Modelos serializados y paquetes de inferencia |
 
-Las rutas parten de la raíz del proyecto, detectada desde el módulo, `TALLER_PROJECT_ROOT` o el directorio actual del repositorio. Los archivos se escriben en `data/` salvo reportes e información de optimización. `config.py` crea esas carpetas al importarse y centraliza la derivación de nombres limitados en `ruta_limitada(path, limit)`. Cada ruta base (matriz y vocabulario) recibe el sufijo `_limit_N`, por lo que la convención queda alineada sin añadir variables de configuración para cada límite posible.
+Las rutas parten de la raíz del proyecto, detectada desde el módulo, `TALLER_PROJECT_ROOT` o el directorio actual del repositorio. `config.py` centraliza las ubicaciones por tipo de salida y entrenador, evitando carpetas específicas en la raíz. También centraliza la derivación de nombres limitados en `ruta_limitada(path, limit)`. Cada ruta base (matriz y vocabulario) recibe el sufijo `_limit_N`, por lo que la convención queda alineada sin añadir variables de configuración para cada límite posible.
 
 ## Limpieza lingüística
 

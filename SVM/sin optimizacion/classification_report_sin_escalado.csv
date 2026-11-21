@@ -1,0 +1,45 @@
+Embedding,Classification Report
+BOW,"=== BOW ====
+              precision    recall  f1-score   support
+
+    negative       0.70      0.79      0.74     16800
+     neutral       0.38      0.19      0.25      8400
+    positive       0.74      0.82      0.77     16800
+
+    accuracy                           0.68     42000
+   macro avg       0.60      0.60      0.59     42000
+weighted avg       0.65      0.68      0.66     42000
+"
+TF_IDF Bigrama,"=== TF_IDF Bigrama ====
+              precision    recall  f1-score   support
+
+    negative       0.70      0.78      0.74     16800
+     neutral       0.41      0.16      0.23      8400
+    positive       0.71      0.84      0.77     16800
+
+    accuracy                           0.68     42000
+   macro avg       0.60      0.59      0.58     42000
+weighted avg       0.64      0.68      0.65     42000
+"
+TF_IDF Monograma,"=== TF_IDF Monograma ====
+              precision    recall  f1-score   support
+
+    negative       0.70      0.82      0.76     16800
+     neutral       0.42      0.18      0.25      8400
+    positive       0.74      0.83      0.79     16800
+
+    accuracy                           0.70     42000
+   macro avg       0.62      0.61      0.60     42000
+weighted avg       0.66      0.70      0.67     42000
+"
+FastText,"=== FastText ====
+              precision    recall  f1-score   support
+
+    negative       0.66      0.83      0.73     16800
+     neutral       0.45      0.04      0.08      8400
+    positive       0.69      0.82      0.75     16800
+
+    accuracy                           0.67     42000
+   macro avg       0.60      0.57      0.52     42000
+weighted avg       0.63      0.67      0.61     42000
+"

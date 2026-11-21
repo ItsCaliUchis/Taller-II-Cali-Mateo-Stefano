@@ -27,13 +27,19 @@ def _find_project_root():
 PROJECT_ROOT = _find_project_root()
 DATA = PROJECT_ROOT / "data"
 CLASSIFICATION_REPORTS = PROJECT_ROOT / "classification_reports"
+SGD_REPORTS = CLASSIFICATION_REPORTS / "sgd"
 RNA_REPORTS = CLASSIFICATION_REPORTS / "rna"
+LINEAR_SVC_REPORTS = CLASSIFICATION_REPORTS / "linear_svc"
+SVM_REPORTS = CLASSIFICATION_REPORTS / "svm"
 OPTIMIZATION_RESULTS = PROJECT_ROOT / "optimization_results"
+SVM_CHECKPOINTS = OPTIMIZATION_RESULTS / "svm"
 DRIVE_FOLDER_ID = "1wFGB-jh0yyq-igyCQPYAzm-hwppNYLyu"
 DRIVE_FOLDER_URL = f"https://drive.google.com/drive/folders/{DRIVE_FOLDER_ID}?usp=sharing"
 DRIVE_REMOTE_MANIFEST = DATA / "ListadoRemoto.json"
 DRIVE_DOWNLOAD_MANIFEST = DATA / "ListadoDescarga.json"
 MODELS = PROJECT_ROOT / "models"
+LINEAR_SVC_MODELS = MODELS / "linear_svc"
+SVM_MODELS = MODELS / "svm"
 RNA_DRIVE_BUNDLE = DATA / "rna_modelos_finales.zip"
 
 DATA.mkdir(exist_ok=True)
@@ -67,62 +73,58 @@ FASTTEXT_NROWS = None
 
 negaciones_path = DATA / "negaciones.json"
 
-# Rutas de informes de clasificacion
-df_sb_sgd = CLASSIFICATION_REPORTS / "classification_report_sb_sgd.csv" # sin optimizar (no balanceado)
-df_b_sgd = CLASSIFICATION_REPORTS / "classification_report_b_sgd.csv" # sin optimizar (balanceado)
-df_optimizado_sb_sgd = CLASSIFICATION_REPORTS / "classification_report_opt_sb_sgd.csv" # optimizado (no balanceado)
-df_optimizado_b_sgd = CLASSIFICATION_REPORTS / "classification_report_opt_b_sgd.csv" # optimizado (balanceado)
+# Reportes de SGD.
+df_sb_sgd = SGD_REPORTS / "classification_report_sb_sgd.csv"
+df_b_sgd = SGD_REPORTS / "classification_report_b_sgd.csv"
+df_optimizado_sb_sgd = SGD_REPORTS / "classification_report_opt_sb_sgd.csv"
+df_optimizado_b_sgd = SGD_REPORTS / "classification_report_opt_b_sgd.csv"
 
-# Rutas de resultados de LinearSVC
-SVM_DIR = PROJECT_ROOT / "SVM"
-SVM_SIN_OPT_DIR = SVM_DIR / "sin optimizacion"
-SVM_CON_OPT_DIR = SVM_DIR / "con optimizacion"
-
-SVM_SIN_OPT_DIR.mkdir(parents=True, exist_ok=True)
-SVM_CON_OPT_DIR.mkdir(parents=True, exist_ok=True)
+# Rutas de reportes de LinearSVC, separados por variante.
+LINEAR_SVC_BASELINE_REPORTS = LINEAR_SVC_REPORTS / "sin_optimizacion"
+LINEAR_SVC_OPTIMIZED_REPORTS = LINEAR_SVC_REPORTS / "con_optimizacion"
 
 # CSV base
 df_sin_scaler_linear_svc = (
-    SVM_SIN_OPT_DIR / "classification_report_sin_escalado.csv"
+    LINEAR_SVC_BASELINE_REPORTS / "classification_report_sin_escalado.csv"
 )
 df_con_scaler_linear_svc = (
-    SVM_SIN_OPT_DIR / "classification_report_con_escalado.csv"
+    LINEAR_SVC_BASELINE_REPORTS / "classification_report_con_escalado.csv"
 )
 
 # CSV optimizados
 df_opt_sin_scaler_linear_svc = (
-    SVM_CON_OPT_DIR / "classification_report_sin_escalado.csv"
+    LINEAR_SVC_OPTIMIZED_REPORTS / "classification_report_sin_escalado.csv"
 )
 df_opt_con_scaler_linear_svc = (
-    SVM_CON_OPT_DIR / "classification_report_con_escalado.csv"
+    LINEAR_SVC_OPTIMIZED_REPORTS / "classification_report_con_escalado.csv"
 )
 
 # Gráficos base
 grafico_matrices_sin_scaler_linear_svc = (
-    SVM_SIN_OPT_DIR / "matrices_sin_escalado.png"
+    LINEAR_SVC_BASELINE_REPORTS / "matrices_sin_escalado.png"
 )
 grafico_matrices_con_scaler_linear_svc = (
-    SVM_SIN_OPT_DIR / "matrices_con_escalado.png"
+    LINEAR_SVC_BASELINE_REPORTS / "matrices_con_escalado.png"
 )
 grafico_curvas_sin_scaler_linear_svc = (
-    SVM_SIN_OPT_DIR / "curvas_sin_escalado.png"
+    LINEAR_SVC_BASELINE_REPORTS / "curvas_sin_escalado.png"
 )
 grafico_curvas_con_scaler_linear_svc = (
-    SVM_SIN_OPT_DIR / "curvas_con_escalado.png"
+    LINEAR_SVC_BASELINE_REPORTS / "curvas_con_escalado.png"
 )
 
 # Gráficos optimizados
 grafico_matrices_opt_sin_scaler_linear_svc = (
-    SVM_CON_OPT_DIR / "matrices_sin_escalado.png"
+    LINEAR_SVC_OPTIMIZED_REPORTS / "matrices_sin_escalado.png"
 )
 grafico_matrices_opt_con_scaler_linear_svc = (
-    SVM_CON_OPT_DIR / "matrices_con_escalado.png"
+    LINEAR_SVC_OPTIMIZED_REPORTS / "matrices_con_escalado.png"
 )
 grafico_curvas_opt_sin_scaler_linear_svc = (
-    SVM_CON_OPT_DIR / "curvas_sin_escalado.png"
+    LINEAR_SVC_OPTIMIZED_REPORTS / "curvas_sin_escalado.png"
 )
 grafico_curvas_opt_con_scaler_linear_svc = (
-    SVM_CON_OPT_DIR / "curvas_con_escalado.png"
+    LINEAR_SVC_OPTIMIZED_REPORTS / "curvas_con_escalado.png"
 )
 
 # Rutas de Resultados de Optimización de Modelos
@@ -137,14 +139,11 @@ RNA_RESULTS = OPTIMIZATION_RESULTS / "rna_results"
 TRAINING_CACHE = OPTIMIZATION_RESULTS / "training_cache"
 
 # Entrenamiento y artefactos SVM optimizado.
-SVM_RESULTS = PROJECT_ROOT / "results" / "svm"
+SVM_RESULTS = SVM_REPORTS
 SVM_CACHE = TRAINING_CACHE / "svm_cache"
-SVM_CHECKPOINT = SVM_RESULTS / "resultados_svm.json"
+SVM_CHECKPOINT = SVM_CHECKPOINTS / "resultados_svm.json"
 SVM_SUMMARY = SVM_RESULTS / "resultados_svm.csv"
-SVM_ARTIFACTS = SVM_RESULTS / "artifacts"
-SVM_RESULTS.mkdir(parents=True, exist_ok=True)
-SVM_CACHE.mkdir(parents=True, exist_ok=True)
-SVM_ARTIFACTS.mkdir(parents=True, exist_ok=True)
+SVM_ARTIFACTS = SVM_MODELS
 
 svm_dataset = dataset_clean
 svm_embeddings = {
@@ -171,8 +170,19 @@ models_sgd = MODELS / "sgd_opt"
 sgd_balanced = models_sgd / "balanced"
 sgd_nbalanced = models_sgd / "not_balanced"
 
-sgd_balanced.mkdir(parents=True, exist_ok=True)
-sgd_nbalanced.mkdir(parents=True, exist_ok=True)
+for directory in (
+    SGD_REPORTS,
+    LINEAR_SVC_BASELINE_REPORTS,
+    LINEAR_SVC_OPTIMIZED_REPORTS,
+    SVM_REPORTS,
+    SVM_CHECKPOINTS,
+    SVM_CACHE,
+    LINEAR_SVC_MODELS,
+    SVM_MODELS,
+    sgd_balanced,
+    sgd_nbalanced,
+):
+    directory.mkdir(parents=True, exist_ok=True)
 
 
 

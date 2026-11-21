@@ -1,0 +1,9 @@
+experimento,embedding,variante,best_f1_macro_cv,best_params,elapsed_seconds
+BoW::balanceado,BoW,balanceado,0.6128456681345422,"{""linearsvc__C"": 0.01, ""linearsvc__loss"": ""squared_hinge"", ""linearsvc__penalty"": ""l1""}",3420.6573169999992
+BoW::sin balancear,BoW,sin balancear,0.595126213983751,"{""linearsvc__C"": 0.1, ""linearsvc__loss"": ""squared_hinge"", ""linearsvc__penalty"": ""l2""}",892.598514700001
+FastText::balanceado,FastText,balanceado,0.5841639744038287,"{""linearsvc__C"": 1, ""linearsvc__loss"": ""squared_hinge"", ""linearsvc__penalty"": ""l2""}",13453.367384499998
+FastText::sin balancear,FastText,sin balancear,0.5243291640242734,"{""linearsvc__C"": 10, ""linearsvc__loss"": ""squared_hinge"", ""linearsvc__penalty"": ""l2""}",5513.314440500002
+TF-IDF Bigrama::balanceado,TF-IDF Bigrama,balanceado,0.5524071744925465,"{""linearsvc__C"": 0.01, ""linearsvc__loss"": ""squared_hinge"", ""linearsvc__penalty"": ""l1""}",7737.1717715999985
+TF-IDF Bigrama::sin balancear,TF-IDF Bigrama,sin balancear,0.574660317436986,"{""linearsvc__C"": 10, ""linearsvc__loss"": ""hinge"", ""linearsvc__penalty"": ""l2""}",669.4850396000002
+TF-IDF Monogram::balanceado,TF-IDF Monogram,balanceado,0.6047251091731181,"{""linearsvc__C"": 0.01, ""linearsvc__loss"": ""squared_hinge"", ""linearsvc__penalty"": ""l1""}",2250.2948209000024
+TF-IDF Monogram::sin balancear,TF-IDF Monogram,sin balancear,0.5967272161102308,"{""linearsvc__C"": 1, ""linearsvc__loss"": ""squared_hinge"", ""linearsvc__penalty"": ""l2""}",191.88861629999883
