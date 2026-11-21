@@ -299,7 +299,7 @@ def _ruta_checkpoint(checkpoint_dir, checkpoint_prefix, nombre, clf):
 
 def modelo_sin_scaler(
     embeddings, clf, nombres, y, cv, *, checkpoint_dir=None,
-    checkpoint_prefix="baseline_unscaled", n_jobs=1, curve_points=3, output_dir
+    checkpoint_prefix="baseline_unscaled", n_jobs=1, curve_points=3, output_dir=None
 ):
 
     matrices_sb = [] # sb = sin balancear
@@ -308,7 +308,8 @@ def modelo_sin_scaler(
 
     modelos = {}
 
-    output_dir.mkdir(parents=True, exist_ok=True)
+    if output_dir is not None:
+        output_dir.mkdir(parents=True, exist_ok=True)
 
     for embedding, nombre in zip(embeddings,nombres):
         print(f"\nEntrenando modelo sin escalado: {nombre}")
@@ -325,10 +326,11 @@ def modelo_sin_scaler(
         modelo = resultados["model"]
         modelos[nombre] = modelo
 
-        ruta_modelo = output_dir / f"{nombre}.pkl"
+        if output_dir is not None:
+            ruta_modelo = output_dir / f"{nombre}.pkl"
 
-        with open(ruta_modelo, "wb") as file:
-            pickle.dump(modelo, file)
+            with open(ruta_modelo, "wb") as file:
+                pickle.dump(modelo, file)
 
         cm = resultados["cm"]
         train_sizes, train_scores, validation_scores = resultados["lc_elements"]
@@ -351,7 +353,7 @@ def modelo_sin_scaler(
 
 def modelo_con_scaler(
     embeddings, clf, nombres, y, cv, *, checkpoint_dir=None,
-    checkpoint_prefix="baseline_scaled", n_jobs=1, curve_points=3, output_dir
+    checkpoint_prefix="baseline_scaled", n_jobs=1, curve_points=3, output_dir=None
 ):
     
     matrices_b = [] # b = balanceado
@@ -360,7 +362,8 @@ def modelo_con_scaler(
 
     modelos = {}
 
-    output_dir.mkdir(parents=True, exist_ok=True)
+    if output_dir is not None:
+        output_dir.mkdir(parents=True, exist_ok=True)
 
     for embedding, nombre in zip(embeddings,nombres):
         print(f"\nEntrenando modelo con escalado: {nombre}")
@@ -377,10 +380,11 @@ def modelo_con_scaler(
         modelo = resultados["model"]
         modelos[nombre] = modelo
 
-        ruta_modelo = output_dir / f"{nombre}.pkl"
+        if output_dir is not None:
+            ruta_modelo = output_dir / f"{nombre}.pkl"
 
-        with open(ruta_modelo, "wb") as file:
-            pickle.dump(modelo, file)
+            with open(ruta_modelo, "wb") as file:
+                pickle.dump(modelo, file)
 
         cm = resultados["cm"]
         train_sizes, train_scores, validation_scores = resultados["lc_elements"]
