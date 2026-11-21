@@ -401,6 +401,42 @@ def modelo_con_scaler(
 
     return variables
 
+def ejecutar_grid_search(
+    X_train,
+    y_train,
+    clf,
+    hiperparametros,
+    cv,
+    *,
+    n_jobs=-1,
+    pre_dispatch=None,
+    verbose=2,
+    fit_callback=None,
+):
+    """Ejecuta una búsqueda CV compartida por los entrenadores sklearn.
+
+    ``fit_callback`` permite envolver el ajuste con progreso, métricas de
+    actividad o límites de hilos sin duplicar la configuración del buscador.
+    """
+    busqueda = GridSearchCV(
+        estimator=clone(clf),
+        param_grid=hiperparametros,
+        scoring="f1_macro",
+        cv=cv,
+        n_jobs=n_jobs,
+        pre_dispatch=pre_dispatch,
+        verbose=verbose,
+        error_score="raise",
+        refit=False,
+        return_train_score=False,
+    )
+    if fit_callback is None:
+        busqueda.fit(X_train, y_train)
+    else:
+        fit_callback(busqueda, X_train, y_train)
+    return busqueda
+
+
 def optimizar_sin_scaler(hiperparametros, embeddings, clf, nombres, y, cv):
 
     best_params_sb = {} # sin balancear
@@ -419,16 +455,15 @@ def optimizar_sin_scaler(hiperparametros, embeddings, clf, nombres, y, cv):
             random_state=102
         )
 
-        busqueda_sin_scaler = GridSearchCV(
-            estimator = clone(clf),
-            param_grid = hiperparametros,
-            scoring = "f1_macro",
-            cv=cv,
+        busqueda_sin_scaler = ejecutar_grid_search(
+            X_train,
+            y_train,
+            clf,
+            hiperparametros,
+            cv,
             n_jobs=-1,
-            verbose=2
+            verbose=2,
         )
-
-        busqueda_sin_scaler.fit(X_train, y_train)
         best_params_sb[f"{nombre}"] = busqueda_sin_scaler.best_params_
 
     return best_params_sb
@@ -452,16 +487,15 @@ def optimizar_con_scaler(hiperparametros, embeddings, clf, nombres, y, cv):
             random_state=102
         )
 
-        busqueda_con_scaler = GridSearchCV(
-            estimator = clone(clf),
-            param_grid = hiperparametros,
-            scoring = "f1_macro",
-            cv=cv,
+        busqueda_con_scaler = ejecutar_grid_search(
+            X_train,
+            y_train,
+            clf,
+            hiperparametros,
+            cv,
             n_jobs=-1,
-            verbose=2
+            verbose=2,
         )
-
-        busqueda_con_scaler.fit(X_train, y_train)
         best_params_b[f"{nombre}"] = busqueda_con_scaler.best_params_
 
     return best_params_b

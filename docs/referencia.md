@@ -6,7 +6,7 @@ Esta página recoge los valores y funciones usados desde otros módulos como int
 
 | Nombre | Uso |
 |---|---|
-| `PROJECT_ROOT`, `DATA`, `CLASSIFICATION_REPORTS`, `RNA_REPORTS`, `OPTIMIZATION_RESULTS` | Rutas base del repositorio. `config.rna_report_dir(embedding)` crea y devuelve la carpeta de reportes RNA correspondiente a BOW, TF-IDF mono/bigrama o FastText. |
+| `PROJECT_ROOT`, `DATA`, `CLASSIFICATION_REPORTS`, `SGD_REPORTS`, `RNA_REPORTS`, `LINEAR_SVC_REPORTS`, `SVM_REPORTS`, `OPTIMIZATION_RESULTS`, `MODELS` | Rutas base y carpetas de reportes agrupadas por entrenador. Checkpoints viven bajo `optimization_results/`; modelos serializados bajo `models/`. `config.rna_report_dir(embedding)` crea y devuelve la carpeta de reportes RNA correspondiente a BOW, TF-IDF mono/bigrama o FastText. |
 | Rutas de archivos (`dataset_raw`, `dataset_clean`, `bow_vect`, `bow_vocab`, `idf_bigram`, `idf_monogram`, `fasttext_embeddings`, `fasttext_vocab`, `bert_vect`, `vocabulario_bert`, `elmo_vect`, `vocabulario_elmo`, `negaciones_path`) | Ubicaciones canónicas de entradas y salidas completas. Las ejecuciones limitadas derivan rutas con `ruta_limitada`; no requieren variables separadas. |
 | `ruta_limitada(output_path, limit)` | Retorna la ruta base si `limit` es `None`; con límite positivo, agrega `_limit_N` al nombre antes de la extensión. Rechaza límites no positivos. Es la política compartida de nombres de salida del preprocesamiento. |
 | `cargar_negaciones()` | Lee la lista de negaciones; retorna `[]` si el archivo no existe o está vacío. |
@@ -17,6 +17,7 @@ Esta página recoge los valores y funciones usados desde otros módulos como int
 | Función | Consumidores | Comportamiento |
 |---|---|---|
 | `ejecutar_etapa(nombre, funcion, *args, **kwargs)` | Preprocesamiento y entrenamiento | Ejecuta una operación mostrando tiempo y RAM; retorna el valor de la operación y vuelve a lanzar sus excepciones. |
+| `ejecutar_grid_search(...)` | SGD, LinearSVC y SVM | Construye y ejecuta una búsqueda CV macro-F1; permite inyectar un callback para mostrar progreso y actividad durante ajustes largos. |
 | `extractor_reviews(df)` | Vectorizadores | Limpia y tokeniza la columna `reviews`, elimina stopwords inglesas salvo las negaciones configuradas y retorna una lista de textos. |
 | `obtener_limit()` | Comandos de vectorización | Lee `--limit` de la CLI; permite ausencia o entero positivo. |
 | `obtener_ruta_salida(path, limit)` | TF-IDF | Fachada de compatibilidad que delega el nombre limitado a `config.ruta_limitada`. |
