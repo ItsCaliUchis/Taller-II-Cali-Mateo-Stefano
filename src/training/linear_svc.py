@@ -183,6 +183,10 @@ def main():
         "positive",
     ]
 
+    """Utilizamos Slicing para que excluyamos a Bigram"""
+    embeddings_sin_bigram = embeddings[:1] + embeddings[2:] 
+    nombres_sin_bigram = nombres[:1] + nombres[2:]
+
     # 5. verificar que las matrices coincidan con las etiquetas
     for embedding, nombre in zip(embeddings, nombres):
         if embedding is None:
@@ -200,6 +204,7 @@ def main():
 
     print(f"\nDimensiones de y: {y.shape}")
 
+
     # 6. validación cruzada: 3 folds
     cv = StratifiedKFold(
         n_splits=3,
@@ -207,70 +212,138 @@ def main():
         random_state=42,
     )
 
-    # 7. clasificador base LinearSVC
+    # 7. clasificador base LinearSVC (BoW, Monogram, FastText)
     clf = LinearSVC(
-        max_iter=5000,
+        max_iter=10000,
         random_state=42,
+        dual=False,
+        tol=1e-3
+    )
+
+    clf_BIGRAM = LinearSVC(
+        max_iter=3000,
+        random_state=42,
+        dual=True,
+        tol=1e-3
     )
 
     # =========================================================
     # ENTRENAMIENTO BASE SIN ESCALADO
     # =========================================================
-
-    resultados_sin_scaler = ejecutar_etapa(
-        "Entrenando modelos sin escalado",
+    """
+    resultados_sin_scaler_1 = ejecutar_etapa(
+        "Entrenando modelos sin escalado [BoW, Monogram, FastText]",
         modelo_sin_scaler,
-        embeddings,
+        embeddings_sin_bigram,
         clf,
-        nombres,
+        nombres_sin_bigram,
         y,
         cv,
+        output_dir = config.svm_nbalanced
     )
 
-    cr_sb = resultados_sin_scaler["cr_sb"]
-    matrices_sb = resultados_sin_scaler["matrices"]
-    ln_sb = resultados_sin_scaler["ln_sb"]
+    #Para entrenar a TF-IDF Bigrama, utilizamos dual para resolver el problema de optimización
+
+    resultados_sin_scaler_2 = ejecutar_etapa(
+        "Entrenando modelos sin escalado [Bigram]",
+        modelo_sin_scaler,
+        [embeddings[1]],
+        clf_BIGRAM,
+        [nombres[1]],
+        y,
+        cv,
+        output_dir = config.svm_nbalanced
+    )
+
+    cr_sb = [
+        resultados_sin_scaler_1["cr_sb"][0],
+        resultados_sin_scaler_2["cr_sb"][0],
+        resultados_sin_scaler_1["cr_sb"][1],
+        resultados_sin_scaler_1["cr_sb"][2],
+    ]
+
+    matrices_sb = (
+        resultados_sin_scaler_1["matrices"] + resultados_sin_scaler_2["matrices"]
+    )
+
+    ln_sb = [
+        resultados_sin_scaler_1["ln_sb"][0],
+        resultados_sin_scaler_2["ln_sb"][0],
+        resultados_sin_scaler_1["ln_sb"][1],
+        resultados_sin_scaler_1["ln_sb"][2],
+    ]
 
     df_sb = crear_dataframe_reportes(nombres, cr_sb)
     df_sb.to_csv(
         config.df_sin_scaler_linear_svc,
         index=True,
     )
+    """
 
     # =========================================================
     # ENTRENAMIENTO BASE CON ESCALADO
     # =========================================================
-
     # with_mean=False permite trabajar con matrices dispersas
     clf_balanceado = make_pipeline(
         StandardScaler(with_mean=False),
         clone(clf),
     )
 
-    resultados_con_scaler = ejecutar_etapa(
-        "Entrenando modelos con escalado",
-        modelo_con_scaler,
-        embeddings,
-        clf_balanceado,
-        nombres,
-        y,
-        cv,
+    clf_balanceado_BIGRAM = make_pipeline(
+        StandardScaler(with_mean=False),
+        clone(clf_BIGRAM)
     )
 
-    cr_b = resultados_con_scaler["cr_b"]
-    matrices_b = resultados_con_scaler["matrices"]
-    ln_b = resultados_con_scaler["ln_b"]
+    resultados_con_scaler_1 = ejecutar_etapa(
+        "Entrenando modelos con escalado [BoW, Monogram, FastText]",
+        modelo_con_scaler,
+        embeddings_sin_bigram,
+        clf_balanceado,
+        nombres_sin_bigram,
+        y,
+        cv,
+        output_dir = config.svm_balanced
+    )
+
+    resultados_con_scaler_2 = ejecutar_etapa(
+        "Entrenando modelos con escalado [Bigram]",
+        modelo_con_scaler,
+        [embeddings[1]],
+        clf_balanceado_BIGRAM,
+        [nombres[1]],
+        y,
+        cv,
+        output_dir = config.svm_balanced
+    )
+
+    cr_b = [
+        resultados_con_scaler_1["cr_b"][0],
+        resultados_con_scaler_2["cr_b"][0],
+        resultados_con_scaler_1["cr_b"][1],
+        resultados_con_scaler_1["cr_b"][2],
+    ]
+
+    matrices_b = (
+        resultados_con_scaler_1["matrices"] + resultados_con_scaler_2["matrices"]
+    )
+
+    ln_b = [
+        resultados_con_scaler_1["ln_b"][0],
+        resultados_con_scaler_2["ln_b"][0],
+        resultados_con_scaler_1["ln_b"][1],
+        resultados_con_scaler_1["ln_b"][2],
+    ]
 
     df_b = crear_dataframe_reportes(nombres, cr_b)
     df_b.to_csv(
         config.df_con_scaler_linear_svc,
         index=True,
     )
-
     # =========================================================
     # GRÁFICOS DEL ENTRENAMIENTO BASE
     # =========================================================
 
+    """
     ejecutar_etapa(
         "Graficando matrices de confusión sin escalado",
         graficar_y_guardar_matrices,
@@ -280,7 +353,7 @@ def main():
         "LinearSVC sin escalado",
         config.grafico_matrices_sin_scaler_linear_svc,
     )
-
+    """
     ejecutar_etapa(
         "Graficando matrices de confusión con escalado",
         graficar_y_guardar_matrices,
@@ -291,6 +364,7 @@ def main():
         config.grafico_matrices_con_scaler_linear_svc,
     )
 
+    """
     ejecutar_etapa(
         "Graficando curvas de aprendizaje sin escalado",
         graficar_y_guardar_curvas,
@@ -299,7 +373,7 @@ def main():
         "Curvas de aprendizaje LinearSVC sin escalado",
         config.grafico_curvas_sin_scaler_linear_svc,
     )
-
+    """
     ejecutar_etapa(
         "Graficando curvas de aprendizaje con escalado",
         graficar_y_guardar_curvas,
@@ -308,7 +382,6 @@ def main():
         "Curvas de aprendizaje LinearSVC con StandardScaler",
         config.grafico_curvas_con_scaler_linear_svc,
     )
-
     # sin --optimizar, el programa termina después del entrenamiento base
     if not args.optimizar:
         print(
