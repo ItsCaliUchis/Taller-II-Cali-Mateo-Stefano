@@ -596,6 +596,14 @@
         "allow_partial_outputs": true,
         "restart_arg": null
       }
+    },
+    "EngineInference": {
+      "entrypoint": "motor.motor_de_inferencia:main",
+      "description": "Motor de inferencia que recibe como entrada review o dataframe con reviews en ingles, y devuelve el sentimiento junto a las probabilidades",
+      "status": "active",
+      "include": "motor",
+      "supports_help": false,
+      "schedule": null
     }
   }
 }

@@ -3,6 +3,7 @@ import pandas as pd
 from scipy.sparse import save_npz
 from sklearn.feature_extraction.text import TfidfVectorizer
 from pathlib import Path
+import joblib
 
 from utils import extractor_reviews, ejecutar_etapa, obtener_limit, obtener_ruta_salida, obtener_ruta_vocabulario, guardar_vocabulario, verificar_recursos_nltk, _ascii_console_text
 
@@ -62,6 +63,11 @@ def main(
         vect.fit_transform,
         reviews
     )
+
+    if ngram_range == (1,1):
+        joblib.dump(vect, config.tfidf_monogram_vectorizer)
+    else:
+        joblib.dump(vect, config.tfidf_bigram_vectorizer)
 
     vocabulary = vect.get_feature_names_out()
 

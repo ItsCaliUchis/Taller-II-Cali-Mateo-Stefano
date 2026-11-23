@@ -41,11 +41,22 @@ MODELS = PROJECT_ROOT / "models"
 LINEAR_SVC_MODELS = MODELS / "linear_svc"
 SVM_MODELS = MODELS / "svm"
 RNA_DRIVE_BUNDLE = DATA / "rna_modelos_finales.zip"
+VECTORIZADORES = PROJECT_ROOT / "vectorizadores"
+
+"""
+En caso de no poder descargar los modelos de RNA, SVM, o SGD,
+1) descargar manualmente RNA Y SVM del drive 'data_taller2' y añadir al project root (no src)
+2) almacenar los modelos de SGD en la carpeta 'MODELS' descargando del drive 'data_taller2' dentro de sus carpetas correspondientes (con escalado y sin escalado)
+"""
+rna_modelos_finales = PROJECT_ROOT / "rna_modelos_finales" / "optimization_results" / "rna results"
+svm_models = PROJECT_ROOT / "svm-models" / "svm"
+
 
 DATA.mkdir(exist_ok=True)
 CLASSIFICATION_REPORTS.mkdir(exist_ok=True)
 OPTIMIZATION_RESULTS.mkdir(exist_ok=True)
 MODELS.mkdir(exist_ok=True)
+VECTORIZADORES.mkdir(exist_ok=True)
 
 # Rutas utilizadas para la herramienta de registro de comandos.
 JSON_COMMANDS = PROJECT_ROOT / "src" / "commands.info.json"
@@ -72,6 +83,12 @@ fasttext_vocab = DATA / "ft_vocab.csv"
 FASTTEXT_NROWS = None
 
 negaciones_path = DATA / "negaciones.json"
+
+# Rutas para guardado de vectorizadores
+bow_vectorizer = VECTORIZADORES / "bow_vect.pkl"
+fasttext_vectorizer = VECTORIZADORES / "ft_vect.pkl"
+tfidf_monogram_vectorizer = VECTORIZADORES / "tfidf_monogram_vect.pkl"
+tfidf_bigram_vectorizer = VECTORIZADORES / "tfidf_bigram_vect.pkl"
 
 # Reportes de SGD.
 df_sb_sgd = SGD_REPORTS / "classification_report_sb_sgd.csv"
@@ -169,6 +186,15 @@ STOP_FILE = OPTIMIZATION_RESULTS / "pipeline.stop"
 models_sgd = MODELS / "sgd_opt"
 sgd_balanced = models_sgd / "balanced"
 sgd_nbalanced = models_sgd / "not_balanced"
+
+# MODELOS PARA MOTOR DE INFERENCIA
+
+rna_bow_baseline_unscaled = rna_modelos_finales / "rna_bow_best_model_baseline_unscaled.pt"
+rna_bow_opt_unscaled = rna_modelos_finales / "rna_bow_best_model_optimized_unscaled.pt"
+rna_tfidf_monogram = rna_modelos_finales / "rna_idf-monogram_best_model_optimized_unscaled.pt"
+sgd_bow = sgd_balanced / "BOW.pkl"
+sgd_tfidf_monogram = sgd_balanced / "TF-IDF Monograma.pkl"
+svm_bow = svm_models / "bow" / "balanceado" / "model.joblib"
 
 for directory in (
     SGD_REPORTS,

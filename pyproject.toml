@@ -42,6 +42,7 @@ schedule = "schedule:main"
 drive = "drive_downloader.cli:main"
 frontend = "frontend.app:main"
 svm = "training.svm:main"
+EngineInference = "motor.motor_de_inferencia:main"
 
 [tool.poetry]
 packages = [
@@ -51,6 +52,7 @@ packages = [
     {include = "extract", from = "src"},
     {include = "frontend", from = "src"},
     {include = "list_tools.py", from = "src"},
+    {include = "motor", from = "src"},
     {include = "preprocessing", from = "src"},
     {include = "schedule.py", from = "src"},
     {include = "training", from = "src"},

@@ -3,6 +3,7 @@ from pathlib import Path
 import pandas as pd
 from sklearn.feature_extraction.text import CountVectorizer as CV
 import numpy as np
+import joblib
 from scipy.sparse import save_npz
 from utils import extractor_reviews, ejecutar_etapa, obtener_limit, guardar_vocabulario, verificar_recursos_nltk, _ascii_console_text
 
@@ -28,6 +29,7 @@ def main():
     
     vect = CV()
     matrix = vect.fit_transform(extractor_reviews(df)) # aprende el vocabulario y crea los embeddings
+    bow_vect = joblib.dump(vect, config.bow_vectorizer) # guarda el vectorizador
     vocab = vect.get_feature_names_out()
 
     print(f"El vocabulario aprendido es: {vect.get_feature_names_out()} con tamano {len(vect.get_feature_names_out())}")

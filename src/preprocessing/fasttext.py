@@ -3,6 +3,8 @@ import argparse
 import config
 import pandas as pd
 import numpy as np
+import joblib
+from fasttext_vectorizer import FastTextVectorizer
 
 from gensim import downloader
 from nltk.tokenize import word_tokenize as wt
@@ -93,52 +95,24 @@ def main():
         MODELO_FASTTEXT
     )
 
+    vectorizador = FastTextVectorizer(modelo) # ya contiene representaciones del modelo (está preentrenado)
+
     print(
         "\nSe procede a generar los embeddings por palabra.\n",
         flush=True
     )
 
-    #generacion de un vector por palabra
-    embeddings_palabras = {}
-    
-    for palabra in vocabulario:
-        try:
-            vector = modelo.get_vector(palabra)
-        except (KeyError, ValueError):
-            print(f"palabra no encontrada en el modelo: {_ascii_console_text(palabra)}")
-            vector = np.zeros(modelo.vector_size, dtype=np.float32)
-
-        embeddings_palabras[palabra] = np.asarray(
-            vector,
-            dtype=np.float32
-        )
-
-    #generacion de un vector promedio por reseña
-    matriz_reseñas = np.zeros(
-        (len(sentences), modelo.vector_size),
-        dtype=np.float32
-    )
-
-    for i, review in enumerate(sentences):
-        if not review:
-            continue
-
-        suma_vectores = np.zeros(
-            modelo.vector_size,
-            dtype=np.float32
-        )
-
-        for palabra in review:
-            suma_vectores += embeddings_palabras[palabra]
-
-        matriz_reseñas[i] = suma_vectores  / len(review)
-
-    #construccion de la matriz dispersa
+    """ Generador de un vector por reseña
+    """
+    matriz_reseñas = vectorizador.transform(reviews) 
     matriz_embeddings = csr_matrix(matriz_reseñas)
-    print(
-        f"dimensiones de la matriz: {matriz_embeddings.shape}",
-        flush=True
-    )
+
+    """ Almacenamiento de las representaciones de las reviews
+    """
+    vectorizador.matriz_reseñas_ = matriz_embeddings
+    vectorizador.vocabulario_ = vocabulario
+
+    joblib.dump(vectorizador, config.fasttext_vectorizer)
 
     #exportacion del vocabulario
     ejecutar_etapa(
